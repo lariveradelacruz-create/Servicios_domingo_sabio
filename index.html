@@ -9,7 +9,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <style>
         :root { 
-            --primary: #77b28c; /* Verde Pastel */
+            --primary: #77b28c; 
             --primary-dark: #5f9673;
             --success: #2ecc71; 
             --danger: #e74c3c; 
@@ -32,16 +32,22 @@
         .seccion-titulo { font-size: 12px; font-weight: 800; color: #7f8c8d; margin: 25px 0 10px 5px; text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; }
         .seccion-titulo::after { content: ""; flex: 1; height: 1px; background: #ddd; margin-left: 10px; }
 
-        .card-servicio { background: var(--card); border-radius: 18px; padding: 22px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #eee; cursor: pointer; transition: 0.3s; }
+        /* Estilo para tarjetas de servicio con botón borrar */
+        .card-servicio { background: var(--card); border-radius: 18px; padding: 22px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #eee; transition: 0.3s; }
         .card-servicio:active { transform: scale(0.97); background: #f0f7f4; }
+        .info-ser { cursor: pointer; flex: 1; }
         .info-ser h3 { margin: 0; font-size: 17px; color: var(--primary-dark); font-weight: 800; text-transform: uppercase; }
         .info-ser p { margin: 5px 0 0; font-size: 13px; color: #7f8c8d; font-weight: 600; }
+        .btn-delete-card { background: #fee; color: var(--danger); border: none; width: 40px; height: 40px; border-radius: 12px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; margin-left: 10px; }
+
+        /* Selector de meses intuitivo */
+        .meses-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 15px 0; }
+        .mes-chip { background: #f0f0f0; padding: 12px 5px; border-radius: 12px; font-size: 12px; font-weight: 800; text-align: center; cursor: pointer; border: 2px solid transparent; transition: 0.2s; }
+        .mes-chip.selected { background: var(--primary); color: white; border-color: var(--primary-dark); }
 
         .mosaico-meses { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 10px; }
         .btn-mes-card { background: white; border: 2px solid #eef2f0; padding: 30px 10px; border-radius: 20px; text-align: center; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
-        .btn-mes-card:active { transform: scale(0.95); background: #f9fdfb; }
         .btn-mes-card h4 { margin: 0; color: var(--primary-dark); font-size: 18px; text-transform: uppercase; font-weight: 900; }
-        .btn-mes-card p { margin: 5px 0 0; font-size: 12px; color: #95a5a6; font-weight: 700; }
 
         .tabs-container { background: white; position: sticky; top: 78px; z-index: 90; display: flex; border-bottom: 2px solid #eee; margin-bottom: 10px; }
         .tab { flex: 1; text-align: center; padding: 18px; font-weight: 800; font-size: 13px; color: #95a5a6; cursor: pointer; text-transform: uppercase; }
@@ -56,7 +62,7 @@
         
         .acciones-alumno { display: flex; gap: 10px; }
         .btn-ws-alumno { background: var(--ws); color: white; border: none; width: 45px; height: 45px; border-radius: 12px; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        .btn-accion { width: 48px; height: 48px; border-radius: 14px; border: 2px solid #eee; background: #fafafa; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 22px; transition: 0.3s; }
+        .btn-accion { width: 48px; height: 48px; border-radius: 14px; border: 2px solid #eee; background: #fafafa; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 22px; }
         .btn-accion.pagado { background: var(--primary); border-color: var(--primary); color: white; border-radius: 50%; }
 
         .fab { position: fixed; bottom: 30px; right: 25px; width: 65px; height: 65px; background: var(--primary); border-radius: 50%; color: white; font-size: 32px; border: none; box-shadow: 0 6px 20px rgba(119, 178, 140, 0.4); cursor: pointer; z-index: 1000; display: flex; align-items: center; justify-content: center; }
@@ -64,17 +70,17 @@
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 2000; backdrop-filter: blur(3px); }
         .modal-content { background: white; width: 85%; max-width: 400px; border-radius: 25px; padding: 30px; animation: slideUp 0.3s ease; }
         
-        input, select { width: 100%; padding: 14px; margin: 10px 0; border: 1px solid #ddd; border-radius: 12px; font-size: 16px; box-sizing: border-box; }
-        select[multiple] { height: 150px; }
-
+        input { width: 100%; padding: 14px; margin: 10px 0; border: 1px solid #ddd; border-radius: 12px; font-size: 16px; box-sizing: border-box; }
         .btn-principal { background: var(--primary); color: white; width: 100%; border: none; padding: 16px; border-radius: 12px; font-weight: 800; font-size: 16px; cursor: pointer; margin-top: 15px; }
+        .btn-danger-mod { background: var(--danger); color: white; width: 100%; border: none; padding: 16px; border-radius: 12px; font-weight: 800; cursor: pointer; margin-top: 15px; }
+        
         .back-btn { position: absolute; left: 15px; top: 25px; background: rgba(255,255,255,0.3); border: none; width: 42px; height: 42px; border-radius: 12px; color: white; font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 
         .hidden { display: none !important; }
-        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        
         .footer-premium { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 15px; border-top: 1px solid #eee; display: flex; flex-direction: column; gap: 10px; z-index: 80; align-items: center; }
         .btn-ws-grupal { background: var(--ws); color: white; border: none; width: 100%; max-width: 520px; padding: 16px; border-radius: 12px; font-weight: 800; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
+
+        .recordar-box { display: flex; align-items: center; gap: 10px; margin: 15px 0; font-size: 14px; color: #7f8c8d; font-weight: 600; cursor: pointer; justify-content: center; }
     </style>
 </head>
 <body>
@@ -83,8 +89,9 @@
         <div class="login-box">
             <h2>HOLA 👋</h2>
             <p style="color:#7f8c8d; font-size: 14px; margin-bottom: 20px;">Ingresa para gestionar tu aula</p>
-            <input type="email" id="logEmail" placeholder="Correo de Tesorero">
+            <input type="email" id="logEmail" placeholder="Correo">
             <input type="password" id="logPass" placeholder="Contraseña">
+            <label class="recordar-box"><input type="checkbox" id="chkRecordar" checked> Mantener sesión iniciada</label>
             <button class="btn-principal" onclick="manejarLogin()" id="btnLogin">ENTRAR AL SISTEMA</button>
             <p id="logError" style="color:var(--danger); font-size:12px; margin-top:10px;"></p>
         </div>
@@ -96,15 +103,20 @@
                 <h2 style="text-align:center; color:var(--primary-dark);">Nuevo Control</h2>
                 <input type="text" id="newNombre" placeholder="Título (ej: Pensión 2026)">
                 <input type="number" id="newMonto" placeholder="Monto S/">
-                <select id="newMes" multiple>
-                    <option value="marzo">Marzo</option><option value="abril">Abril</option>
-                    <option value="mayo">Mayo</option><option value="junio">Junio</option>
-                    <option value="julio">Julio</option><option value="agosto">Agosto</option>
-                    <option value="septiembre">Septiembre</option><option value="octubre">Octubre</option>
-                    <option value="noviembre">Noviembre</option><option value="diciembre">Diciembre</option>
-                </select>
+                <div class="meses-grid">
+                    <div class="mes-chip" onclick="toggleMes(this, 'marzo')">MAR</div>
+                    <div class="mes-chip" onclick="toggleMes(this, 'abril')">ABR</div>
+                    <div class="mes-chip" onclick="toggleMes(this, 'mayo')">MAY</div>
+                    <div class="mes-chip" onclick="toggleMes(this, 'junio')">JUN</div>
+                    <div class="mes-chip" onclick="toggleMes(this, 'julio')">JUL</div>
+                    <div class="mes-chip" onclick="toggleMes(this, 'agosto')">AGO</div>
+                    <div class="mes-chip" onclick="toggleMes(this, 'septiembre')">SET</div>
+                    <div class="mes-chip" onclick="toggleMes(this, 'octubre')">OCT</div>
+                    <div class="mes-chip" onclick="toggleMes(this, 'noviembre')">NOV</div>
+                    <div class="mes-chip" onclick="toggleMes(this, 'diciembre')">DIC</div>
+                </div>
                 <button class="btn-principal" onclick="crearServiciosMultiples()">GENERAR</button>
-                <button onclick="cerrarModal('modalNuevo')" style="width:100%; background:none; border:none; color:#95a5a6; margin-top:15px; cursor:pointer;">Cancelar</button>
+                <button onclick="cerrarModalNuevo()" style="width:100%; background:none; border:none; color:#95a5a6; margin-top:15px; cursor:pointer;">Cancelar</button>
             </div>
         </div>
 
@@ -148,7 +160,7 @@
                 <div id="renderAlumnos"></div>
             </div>
             <div class="footer-premium">
-                <button class="btn-ws-grupal" onclick="enviarAvisoGrupal()">📢 AVISO GRUPAL (SIN NOMBRES)</button>
+                <button class="btn-ws-grupal" onclick="enviarAvisoGrupal()">📢 AVISO GRUPAL</button>
                 <button onclick="generarPDFConTrazabilidad()" style="background:none; border:none; color:#7f8c8d; font-weight:800; cursor:pointer; text-decoration:underline;">DESCARGAR REPORTE PDF</button>
             </div>
         </div>
@@ -161,26 +173,20 @@
         const client = createClient(SB_URL, SB_KEY);
 
         let serviciosTotal = []; let alumnos = []; let pagosIDs = [];
-        let servicioActivo = null; let nombreGrupoActivo = ""; let tabActual = 'pendientes';
+        let servicioActivo = null; let tabActual = 'pendientes';
         let nivelActual = 1; let userSession = null;
+        let mesesSeleccionados = [];
 
+        // AUTH CON PERSISTENCIA
         async function manejarLogin() {
             const btn = document.getElementById('btnLogin');
-            // .trim() es vital para evitar el error de "clave incorrecta" por espacios accidentales
-            const email = document.getElementById('logEmail').value.trim(); 
+            let userVal = document.getElementById('logEmail').value.trim();
             const pass = document.getElementById('logPass').value.trim();
-            
+            const mantener = document.getElementById('chkRecordar').checked;
+            if (!userVal.includes('@')) userVal += "@aula.com";
             btn.innerText = "VERIFICANDO...";
-            document.getElementById('logError').innerText = "";
-
-            const { data, error } = await client.auth.signInWithPassword({ email, password: pass });
-            
-            if(error) {
-                console.error("Supabase Auth Error:", error.message);
-                document.getElementById('logError').innerText = "Correo o clave incorrectos";
-                btn.innerText = "ENTRAR AL SISTEMA";
-                return;
-            }
+            const { data, error } = await client.auth.signInWithPassword({ email: userVal, password: pass, options: { persistSession: mantener } });
+            if(error) { document.getElementById('logError').innerText = "Usuario o clave incorrectos"; btn.innerText = "ENTRAR AL SISTEMA"; return; }
             userSession = data.user;
             await iniciarApp();
         }
@@ -188,43 +194,76 @@
         async function iniciarApp() {
             document.getElementById('vistaLogin').classList.add('hidden');
             document.getElementById('appContent').classList.remove('hidden');
-            
-            // Cargamos alumnos usando 'identificacion' (sin tilde) como base
             const { data } = await client.from('alumnos').select('*').order('nombres_y_apellidos');
             alumnos = data || [];
             await cargarServicios();
         }
 
-        async function cerrarSesion() {
-            await client.auth.signOut();
-            location.reload();
+        async function revisarSesionActiva() {
+            const { data: { session } } = await client.auth.getSession();
+            if (session) { userSession = session.user; await iniciarApp(); }
         }
 
+        async function cerrarSesion() { await client.auth.signOut(); location.reload(); }
+
+        // SERVICIOS Y BORRADO
         async function cargarServicios() {
             const { data } = await client.from('servicios').select('*').order('created_at', { ascending: false });
             serviciosTotal = data || [];
             const nombresUnicos = [...new Set(serviciosTotal.map(s => s.nombre))];
             const container = document.getElementById('renderServicios');
             container.innerHTML = nombresUnicos.length ? nombresUnicos.map(n => `
-                <div class="card-servicio" onclick="irANivel2('${n}')">
-                    <div class="info-ser"><h3>${n}</h3><p>Ver meses disponibles</p></div>
-                    <div style="color:var(--primary)">❯</div>
+                <div class="card-servicio">
+                    <div class="info-ser" onclick="irANivel2('${n}')"><h3>${n}</h3><p>Ver meses disponibles</p></div>
+                    <button class="btn-delete-card" onclick="preguntarBorrarServicio('${n}')">🗑️</button>
                 </div>`).join('') : '<p style="text-align:center; padding:50px; color:#bdc3c7;">Presione (+) para crear.</p>';
         }
 
+        function preguntarBorrarServicio(nombre) {
+            document.getElementById('confTitulo').innerText = "BORRAR CONTROL";
+            document.getElementById('confCuerpo').innerHTML = `¿Eliminar <b>${nombre.toUpperCase()}</b>?<br>Se borrarán todos sus meses asociados.`;
+            document.getElementById('btnAceptarConf').className = "btn-danger-mod";
+            document.getElementById('modalConfirmar').style.display = 'flex';
+            document.getElementById('btnAceptarConf').onclick = async () => {
+                cerrarModal('modalConfirmar');
+                await client.from('servicios').delete().eq('nombre', nombre);
+                await cargarServicios();
+            };
+        }
+
+        // SELECTOR DE MESES
+        function toggleMes(el, mes) {
+            el.classList.toggle('selected');
+            if(mesesSeleccionados.includes(mes)) mesesSeleccionados = mesesSeleccionados.filter(m => m !== mes);
+            else mesesSeleccionados.push(mes);
+        }
+
+        async function crearServiciosMultiples() {
+            const n = document.getElementById('newNombre').value;
+            const m = document.getElementById('newMonto').value;
+            if(!n || !m || !mesesSeleccionados.length) return alert("Complete los datos y seleccione meses.");
+            const { error } = await client.from('servicios').insert(mesesSeleccionados.map(mes => ({ nombre: n, monto: m, mes: mes })));
+            if(error) return alert(error.message);
+            cerrarModalNuevo(); await cargarServicios();
+        }
+
+        function cerrarModalNuevo() {
+            cerrarModal('modalNuevo');
+            document.querySelectorAll('.mes-chip').forEach(c => c.classList.remove('selected'));
+            mesesSeleccionados = [];
+        }
+
+        // NAVEGACIÓN
         function irANivel2(nombre) {
             nivelActual = 2;
-            nombreGrupoActivo = nombre;
             document.getElementById('vistaNivel1').classList.add('hidden');
             document.getElementById('vistaNivel2').classList.remove('hidden');
             document.getElementById('btnBack').style.display = 'flex';
             document.getElementById('mainTitle').innerText = nombre.toUpperCase();
-            
             const meses = serviciosTotal.filter(s => s.nombre === nombre).sort((a,b) => a.id - b.id);
             document.getElementById('renderMosaico').innerHTML = meses.map(s => `
                 <div class="btn-mes-card" onclick="irANivel3(${s.id})">
-                    <h4>${s.mes.substring(0,3)}</h4>
-                    <p>S/ ${s.monto}</p>
+                    <h4>${s.mes.substring(0,3)}</h4><p>S/ ${s.monto}</p>
                 </div>`).join('');
         }
 
@@ -238,20 +277,11 @@
         }
 
         function navegarAtras() {
-            if(nivelActual === 3) {
-                nivelActual = 2;
-                document.getElementById('vistaNivel3').classList.add('hidden');
-                document.getElementById('vistaNivel2').classList.remove('hidden');
-                document.getElementById('subTitle').innerText = "Gestión Verde 2026";
-            } else if(nivelActual === 2) {
-                nivelActual = 1;
-                document.getElementById('vistaNivel2').classList.add('hidden');
-                document.getElementById('vistaNivel1').classList.remove('hidden');
-                document.getElementById('btnBack').style.display = 'none';
-                document.getElementById('mainTitle').innerText = "DOMINGO SABIO";
-            }
+            if(nivelActual === 3) { nivelActual = 2; document.getElementById('vistaNivel3').classList.add('hidden'); document.getElementById('vistaNivel2').classList.remove('hidden'); document.getElementById('subTitle').innerText = "Gestión Verde 2026"; }
+            else if(nivelActual === 2) { nivelActual = 1; document.getElementById('vistaNivel2').classList.add('hidden'); document.getElementById('vistaNivel1').classList.remove('hidden'); document.getElementById('btnBack').style.display = 'none'; document.getElementById('mainTitle').innerText = "DOMINGO SABIO"; }
         }
 
+        // PAGOS Y WHATSAPP
         async function actualizarListaPagos() {
             const { data } = await client.from('pagos').select('alumno_id').eq('servicio_id', servicioActivo.id);
             pagosIDs = data ? data.map(p => p.alumno_id) : [];
@@ -261,9 +291,7 @@
         function renderAlumnos() {
             const container = document.getElementById('renderAlumnos');
             container.innerHTML = "";
-            // Usando 'identificacion' exactamente como en tu captura de BD
             const filtrados = alumnos.filter(al => (tabActual === 'pagados' ? pagosIDs.includes(al.identificacion) : !pagosIDs.includes(al.identificacion)));
-            
             document.getElementById('statMonto').innerText = `S/ ${pagosIDs.length * servicioActivo.monto}`;
             document.getElementById('statFaltan').innerText = alumnos.length - pagosIDs.length;
             
@@ -274,7 +302,7 @@
                     <div class="nombre-alumno">${al.nombres_y_apellidos}</div>
                     <div class="acciones-alumno">
                         ${!esP ? `<button class="btn-ws-alumno" onclick="enviarWAPrivado('${al.nombres_y_apellidos}')">WA</button>` : ''}
-                        <button class="btn-accion ${esP ? 'pagado' : ''}" onclick="abrirConfirmacion(${al.identificacion}, '${al.nombres_y_apellidos}', ${esP})">
+                        <button class="btn-accion ${esP ? 'pagado' : ''}" onclick="abrirConfirmacionPago(${al.identificacion}, '${al.nombres_y_apellidos}', ${esP})">
                             ${esP ? '🔄' : '○'}
                         </button>
                     </div>
@@ -283,33 +311,39 @@
         }
 
         function enviarWAPrivado(nombre) {
-            const msj = `Hola, recordamos que el pago de ${servicioActivo.nombre} (${servicioActivo.mes.toUpperCase()}) de ${nombre} está pendiente. Monto: S/ ${servicioActivo.monto}. Atte: Tesorería.`;
+            const msj = `Hola, recordamos que el pago de ${servicioActivo.nombre} (${servicioActivo.mes.toUpperCase()}) de ${nombre} está pendiente. Monto: S/ ${servicioActivo.monto}.`;
             window.open(`https://wa.me/?text=${encodeURIComponent(msj)}`);
         }
 
         function enviarAvisoGrupal() {
             const faltantes = alumnos.length - pagosIDs.length;
-            const msj = `📢 *AVISO DE TESORERÍA*\nEstimados padres del aula, les informamos que al día de hoy contamos con *${faltantes} pagos pendientes* para el mes de ${servicioActivo.mes.toUpperCase()}. Agradecemos su pronta regularización para cumplir con las metas del aula.`;
+            const msj = `📢 *AVISO DE TESORERÍA*\nEstimados padres, informamos que contamos con *${faltantes} pagos pendientes* para el mes de ${servicioActivo.mes.toUpperCase()}. Agradecemos su regularización.`;
             window.open(`https://wa.me/?text=${encodeURIComponent(msj)}`);
         }
 
-        async function crearServiciosMultiples() {
-            const n = document.getElementById('newNombre').value;
-            const m = document.getElementById('newMonto').value;
-            const meses = Array.from(document.getElementById('newMes').selectedOptions).map(o => o.value);
-            if(!n || !m || !meses.length) return alert("Complete los datos.");
-            const { error } = await client.from('servicios').insert(meses.map(mes => ({ nombre: n, monto: m, mes: mes })));
-            if(error) return alert(error.message);
-            cerrarModal('modalNuevo'); await cargarServicios();
-        }
-
-        function abrirConfirmacion(id, nom, yaP) {
-            document.getElementById('confCuerpo').innerHTML = `¿Confirmas para <b>${nom}</b>?`;
+function abrirConfirmacionPago(id, nom, yaP) {
+            const titulo = yaP ? "Anular Pago" : "Confirmar Pago";
+            const mensaje = yaP 
+                ? `¿Estás seguro de <b>ANULAR</b> el pago de <b>${nom}</b>?` 
+                : `¿Confirmas registrar el pago de <b>${nom}</b>?`;
+            
+            document.getElementById('confTitulo').innerText = titulo;
+            document.getElementById('confCuerpo').innerHTML = mensaje;
+            
+            // Si ya está pagado (yaP es true), el botón debe ser rojo para advertir que se va a borrar
+            document.getElementById('btnAceptarConf').className = yaP ? "btn-danger-mod" : "btn-principal";
+            
             document.getElementById('modalConfirmar').style.display = 'flex';
+            
             document.getElementById('btnAceptarConf').onclick = async () => {
                 cerrarModal('modalConfirmar');
-                if(yaP) await client.from('pagos').delete().eq('alumno_id', id).eq('servicio_id', servicioActivo.id);
-                else await client.from('pagos').insert([{ alumno_id: id, servicio_id: servicioActivo.id }]);
+                if(yaP) {
+                    // Borra el pago
+                    await client.from('pagos').delete().eq('alumno_id', id).eq('servicio_id', servicioActivo.id);
+                } else {
+                    // Inserta el pago
+                    await client.from('pagos').insert([{ alumno_id: id, servicio_id: servicioActivo.id }]);
+                }
                 await actualizarListaPagos();
             };
         }
@@ -330,12 +364,7 @@
             doc.save(`Reporte_${servicioActivo.mes}.pdf`);
         }
 
-        client.auth.getSession().then(({ data: { session } }) => {
-            if (session) {
-                userSession = session.user;
-                iniciarApp();
-            }
-        });
+        revisarSesionActiva();
     </script>
 </body>
 </html>
