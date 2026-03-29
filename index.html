@@ -3,134 +3,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Domingo Sabio - Gestión Pro V2.5</title>
+    <title>Domingo Sabio - Gestión Verde Pastel</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <style>
-        :root { --primary: #1a73e8; --success: #2ecc71; --danger: #e74c3c; --bg: #f4f7f6; --card: #ffffff; --text: #2c3e50; }
-        body { font-family: 'Segoe UI', Roboto, sans-serif; background: var(--bg); margin: 0; color: var(--text); overflow-x: hidden; -webkit-font-smoothing: antialiased; padding-bottom: 100px; }
+        :root { 
+            --primary: #77b28c; /* Verde Pastel */
+            --primary-dark: #5f9673;
+            --success: #2ecc71; 
+            --danger: #e74c3c; 
+            --bg: #f4f7f6; 
+            --card: #ffffff; 
+            --text: #2c3e50; 
+            --ws: #25D366;
+        }
+        body { font-family: 'Segoe UI', Roboto, sans-serif; background: var(--bg); margin: 0; color: var(--text); overflow-x: hidden; -webkit-font-smoothing: antialiased; padding-bottom: 120px; }
         
-        /* HEADER PROFESIONAL */
-        .header { background: var(--primary); color: white; padding: 25px 15px; text-align: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 15px rgba(0,0,0,0.15); }
+        #vistaLogin { position: fixed; inset: 0; background: var(--bg); z-index: 5000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .login-box { background: white; padding: 40px 30px; border-radius: 25px; width: 100%; max-width: 380px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); text-align: center; }
+        .login-box h2 { color: var(--primary-dark); margin-bottom: 5px; font-weight: 900; text-transform: uppercase; }
+        
+        .header { background: var(--primary); color: white; padding: 25px 15px; text-align: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .header h1 { margin: 0; font-size: 22px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; }
         .header p { margin: 5px 0 0; opacity: 0.9; font-size: 14px; font-weight: 500; }
         
         .container { padding: 20px 15px; max-width: 550px; margin: auto; }
-
-        /* DASHBOARD: CARDS DE SERVICIOS */
         .seccion-titulo { font-size: 12px; font-weight: 800; color: #7f8c8d; margin: 25px 0 10px 5px; text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; }
         .seccion-titulo::after { content: ""; flex: 1; height: 1px; background: #ddd; margin-left: 10px; }
 
-        .card-servicio { background: var(--card); border-radius: 18px; padding: 20px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #eee; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
-        .card-servicio:active { transform: scale(0.97); background: #f0f7ff; }
-        .info-ser h3 { margin: 0; font-size: 17px; color: var(--primary); font-weight: 800; text-transform: uppercase; }
-        .info-ser p { margin: 5px 0 0; font-size: 14px; color: #7f8c8d; font-weight: 600; text-transform: capitalize; }
-        .flecha-ir { font-size: 20px; color: #d1d1d1; font-weight: bold; }
+        .card-servicio { background: var(--card); border-radius: 18px; padding: 22px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #eee; cursor: pointer; transition: 0.3s; }
+        .card-servicio:active { transform: scale(0.97); background: #f0f7f4; }
+        .info-ser h3 { margin: 0; font-size: 17px; color: var(--primary-dark); font-weight: 800; text-transform: uppercase; }
+        .info-ser p { margin: 5px 0 0; font-size: 13px; color: #7f8c8d; font-weight: 600; }
 
-        /* TABS (SISTEMA DE PESTAÑAS) */
+        .mosaico-meses { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 10px; }
+        .btn-mes-card { background: white; border: 2px solid #eef2f0; padding: 30px 10px; border-radius: 20px; text-align: center; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
+        .btn-mes-card:active { transform: scale(0.95); background: #f9fdfb; }
+        .btn-mes-card h4 { margin: 0; color: var(--primary-dark); font-size: 18px; text-transform: uppercase; font-weight: 900; }
+        .btn-mes-card p { margin: 5px 0 0; font-size: 12px; color: #95a5a6; font-weight: 700; }
+
         .tabs-container { background: white; position: sticky; top: 78px; z-index: 90; display: flex; border-bottom: 2px solid #eee; margin-bottom: 10px; }
-        .tab { flex: 1; text-align: center; padding: 18px; font-weight: 800; font-size: 13px; color: #95a5a6; cursor: pointer; text-transform: uppercase; transition: 0.3s; }
-        .tab.active { color: var(--primary); border-bottom: 4px solid var(--primary); background: #f8fbff; }
+        .tab { flex: 1; text-align: center; padding: 18px; font-weight: 800; font-size: 13px; color: #95a5a6; cursor: pointer; text-transform: uppercase; }
+        .tab.active { color: var(--primary-dark); border-bottom: 4px solid var(--primary); background: #f4faf6; }
 
-        /* ESTADÍSTICAS RÁPIDAS */
-        .stats-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: white; padding: 18px; border-radius: 15px; border: 1px solid #e0e0e0; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .stats-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: white; padding: 18px; border-radius: 15px; border: 1px solid #e0e0e0; }
         .stat-item { font-weight: 700; font-size: 13px; color: #7f8c8d; text-align: center; flex: 1; }
-        .stat-item span { color: var(--primary); font-size: 20px; font-weight: 900; display: block; margin-top: 5px; }
+        .stat-item span { color: var(--primary-dark); font-size: 20px; font-weight: 900; display: block; margin-top: 5px; }
 
-        /* LISTA DE ALUMNOS */
-        .card-alumno { background: var(--card); padding: 18px; border-radius: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #eee; box-shadow: 0 2px 8px rgba(0,0,0,0.04); animation: fadeIn 0.4s ease; }
-        .nombre-alumno { font-size: 14px; font-weight: 700; color: #34495e; text-transform: uppercase; line-height: 1.3; }
+        .card-alumno { background: var(--card); padding: 18px; border-radius: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #eee; }
+        .nombre-alumno { font-size: 14px; font-weight: 700; color: #34495e; text-transform: uppercase; flex: 1; }
         
-        .btn-accion { width: 48px; height: 48px; border-radius: 14px; border: 2px solid #eee; background: #fafafa; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 22px; transition: 0.3s; color: #ddd; }
-        .btn-accion.pagado { background: var(--success); border-color: var(--success); color: white; border-radius: 50%; box-shadow: 0 4px 10px rgba(46, 204, 113, 0.3); }
+        .acciones-alumno { display: flex; gap: 10px; }
+        .btn-ws-alumno { background: var(--ws); color: white; border: none; width: 45px; height: 45px; border-radius: 12px; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .btn-accion { width: 48px; height: 48px; border-radius: 14px; border: 2px solid #eee; background: #fafafa; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 22px; transition: 0.3s; }
+        .btn-accion.pagado { background: var(--primary); border-color: var(--primary); color: white; border-radius: 50%; }
 
-        /* BOTÓN FLOTANTE (+) */
-        .fab { position: fixed; bottom: 30px; right: 25px; width: 65px; height: 65px; background: var(--primary); border-radius: 50%; color: white; font-size: 32px; border: none; box-shadow: 0 6px 20px rgba(26,115,232,0.4); cursor: pointer; z-index: 1000; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
-        .fab:active { transform: scale(0.9); }
+        .fab { position: fixed; bottom: 30px; right: 25px; width: 65px; height: 65px; background: var(--primary); border-radius: 50%; color: white; font-size: 32px; border: none; box-shadow: 0 6px 20px rgba(119, 178, 140, 0.4); cursor: pointer; z-index: 1000; display: flex; align-items: center; justify-content: center; }
 
-        /* MODALES */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 2000; backdrop-filter: blur(4px); }
-        .modal-content { background: white; width: 90%; max-width: 420px; border-radius: 25px; padding: 30px; box-shadow: 0 15px 35px rgba(0,0,0,0.2); animation: slideUp 0.3s ease; }
-        .modal-content h2 { margin: 0 0 20px; font-size: 20px; color: var(--primary); text-align: center; font-weight: 800; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 2000; backdrop-filter: blur(3px); }
+        .modal-content { background: white; width: 85%; max-width: 400px; border-radius: 25px; padding: 30px; animation: slideUp 0.3s ease; }
         
-        input, select { width: 100%; padding: 14px; margin: 10px 0; border: 1px solid #ddd; border-radius: 12px; font-size: 16px; box-sizing: border-box; font-family: inherit; }
-        
-        /* Ajuste para Selección Múltiple */
-        select[multiple] { height: 150px; padding: 10px; border: 2px solid #eee; }
-        select[multiple] option { padding: 8px; border-radius: 8px; margin-bottom: 2px; font-weight: 600; }
-        select[multiple] option:checked { background: var(--primary) linear-gradient(0deg, var(--primary) 0%, var(--primary) 100%); color: white; }
+        input, select { width: 100%; padding: 14px; margin: 10px 0; border: 1px solid #ddd; border-radius: 12px; font-size: 16px; box-sizing: border-box; }
+        select[multiple] { height: 150px; }
 
         .btn-principal { background: var(--primary); color: white; width: 100%; border: none; padding: 16px; border-radius: 12px; font-weight: 800; font-size: 16px; cursor: pointer; margin-top: 15px; }
-        
-        .back-btn { position: absolute; left: 15px; top: 25px; background: rgba(255,255,255,0.2); border: none; width: 42px; height: 42px; border-radius: 12px; color: white; font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .back-btn { position: absolute; left: 15px; top: 25px; background: rgba(255,255,255,0.3); border: none; width: 42px; height: 42px; border-radius: 12px; color: white; font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 
         .hidden { display: none !important; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-        /* FOOTER PDF */
-        .footer-pdf { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 15px; border-top: 1px solid #eee; display: flex; justify-content: center; }
+        
+        .footer-premium { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 15px; border-top: 1px solid #eee; display: flex; flex-direction: column; gap: 10px; z-index: 80; align-items: center; }
+        .btn-ws-grupal { background: var(--ws); color: white; border: none; width: 100%; max-width: 520px; padding: 16px; border-radius: 12px; font-weight: 800; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
     </style>
 </head>
 <body>
 
-    <div id="modalNuevo" class="modal-overlay">
-        <div class="modal-content">
-            <h2>Crear Controles</h2>
-            <p style="text-align:center; color:#7f8c8d; font-size: 13px; margin-bottom: 15px;">Selecciona los meses que deseas activar.</p>
-            <input type="text" id="newNombre" placeholder="Título (ej: Pensión)">
-            <input type="number" id="newMonto" placeholder="Monto S/ (ej: 50)">
-            <select id="newMes" multiple>
-                <option value="marzo">Marzo</option><option value="abril">Abril</option>
-                <option value="mayo">Mayo</option><option value="junio">Junio</option>
-                <option value="julio">Julio</option><option value="agosto">Agosto</option>
-                <option value="septiembre">Septiembre</option><option value="octubre">Octubre</option>
-                <option value="noviembre">Noviembre</option><option value="diciembre">Diciembre</option>
-            </select>
-            <button class="btn-principal" onclick="crearServiciosMultiples()">GENERAR CONTROLES</button>
-            <button onclick="cerrarModal('modalNuevo')" style="width:100%; background:none; border:none; color:#95a5a6; margin-top:15px; font-weight:700; cursor:pointer;">Cancelar</button>
+    <div id="vistaLogin">
+        <div class="login-box">
+            <h2>HOLA 👋</h2>
+            <p style="color:#7f8c8d; font-size: 14px; margin-bottom: 20px;">Ingresa para gestionar tu aula</p>
+            <input type="email" id="logEmail" placeholder="Correo de Tesorero">
+            <input type="password" id="logPass" placeholder="Contraseña">
+            <button class="btn-principal" onclick="manejarLogin()" id="btnLogin">ENTRAR AL SISTEMA</button>
+            <p id="logError" style="color:var(--danger); font-size:12px; margin-top:10px;"></p>
         </div>
     </div>
 
-    <div id="modalConfirmar" class="modal-overlay">
-        <div class="modal-content">
-            <h2 id="confTitulo">Confirmar</h2>
-            <p id="confCuerpo" style="text-align:center; font-size: 16px; color: #555; line-height: 1.5;"></p>
-            <button class="btn-principal" id="btnAceptarConf">CONFIRMAR</button>
-            <button onclick="cerrarModal('modalConfirmar')" style="width:100%; background:none; border:none; color:#95a5a6; margin-top:15px; font-weight:700; cursor:pointer;">Cancelar</button>
-        </div>
-    </div>
-
-    <div class="header">
-        <button id="btnBack" class="back-btn" style="display:none" onclick="irHome()">←</button>
-        <h1 id="mainTitle">DOMINGO SABIO</h1>
-        <p id="subTitle">Gestión de Pagos 2026</p>
-    </div>
-
-    <div id="vistaHome" class="container">
-        <div class="seccion-titulo">Controles Activos</div>
-        <div id="renderServicios"></div>
-        <button class="fab" onclick="abrirModal('modalNuevo')">+</button>
-    </div>
-
-    <div id="vistaDetalle" class="hidden">
-        <div class="tabs-container">
-            <div id="tabPen" class="tab active" onclick="cambiarTab('pendientes')">Pendientes</div>
-            <div id="tabPag" class="tab" onclick="cambiarTab('pagados')">Pagados ✅</div>
-        </div>
-
-        <div class="container">
-            <div class="stats-bar">
-                <div class="stat-item">Recaudado <span id="statMonto">S/ 0</span></div>
-                <div class="stat-item">Faltantes <span id="statFaltan">0</span></div>
+    <div id="appContent" class="hidden">
+        <div id="modalNuevo" class="modal-overlay">
+            <div class="modal-content">
+                <h2 style="text-align:center; color:var(--primary-dark);">Nuevo Control</h2>
+                <input type="text" id="newNombre" placeholder="Título (ej: Pensión 2026)">
+                <input type="number" id="newMonto" placeholder="Monto S/">
+                <select id="newMes" multiple>
+                    <option value="marzo">Marzo</option><option value="abril">Abril</option>
+                    <option value="mayo">Mayo</option><option value="junio">Junio</option>
+                    <option value="julio">Julio</option><option value="agosto">Agosto</option>
+                    <option value="septiembre">Septiembre</option><option value="octubre">Octubre</option>
+                    <option value="noviembre">Noviembre</option><option value="diciembre">Diciembre</option>
+                </select>
+                <button class="btn-principal" onclick="crearServiciosMultiples()">GENERAR</button>
+                <button onclick="cerrarModal('modalNuevo')" style="width:100%; background:none; border:none; color:#95a5a6; margin-top:15px; cursor:pointer;">Cancelar</button>
             </div>
-            
-            <div id="renderAlumnos"></div>
         </div>
 
-        <div class="footer-pdf">
-            <button class="btn-principal" style="background:var(--danger); max-width:520px;" onclick="generarPDFV2()">📄 GENERAR REPORTE PDF</button>
+        <div id="modalConfirmar" class="modal-overlay">
+            <div class="modal-content">
+                <h2 id="confTitulo" style="text-align:center; color:var(--primary-dark);">Confirmar</h2>
+                <p id="confCuerpo" style="text-align:center; color: #555;"></p>
+                <button class="btn-principal" id="btnAceptarConf">ACEPTAR</button>
+                <button onclick="cerrarModal('modalConfirmar')" style="width:100%; background:none; border:none; color:#95a5a6; margin-top:15px; cursor:pointer;">Volver</button>
+            </div>
+        </div>
+
+        <div class="header">
+            <button id="btnBack" class="back-btn" style="display:none" onclick="navegarAtras()">←</button>
+            <h1 id="mainTitle">DOMINGO SABIO</h1>
+            <p id="subTitle">Gestión Verde 2026</p>
+        </div>
+
+        <div id="vistaNivel1" class="container">
+            <div class="seccion-titulo">Servicios Registrados</div>
+            <div id="renderServicios"></div>
+            <button class="fab" onclick="abrirModal('modalNuevo')">+</button>
+            <button onclick="cerrarSesion()" style="width:100%; background:none; border:none; color:#95a5a6; margin-top:40px; font-weight:bold; cursor:pointer;">CERRAR SESIÓN</button>
+        </div>
+
+        <div id="vistaNivel2" class="container hidden">
+            <div class="seccion-titulo">Seleccione un Mes</div>
+            <div id="renderMosaico" class="mosaico-meses"></div>
+        </div>
+
+        <div id="vistaNivel3" class="hidden">
+            <div class="tabs-container">
+                <div id="tabPen" class="tab active" onclick="cambiarTab('pendientes')">Pendientes</div>
+                <div id="tabPag" class="tab" onclick="cambiarTab('pagados')">Pagados ✅</div>
+            </div>
+            <div class="container">
+                <div class="stats-bar">
+                    <div class="stat-item">Recaudado <span id="statMonto">S/ 0</span></div>
+                    <div class="stat-item">Faltantes <span id="statFaltan">0</span></div>
+                </div>
+                <div id="renderAlumnos"></div>
+            </div>
+            <div class="footer-premium">
+                <button class="btn-ws-grupal" onclick="enviarAvisoGrupal()">📢 AVISO GRUPAL (SIN NOMBRES)</button>
+                <button onclick="generarPDFConTrazabilidad()" style="background:none; border:none; color:#7f8c8d; font-weight:800; cursor:pointer; text-decoration:underline;">DESCARGAR REPORTE PDF</button>
+            </div>
         </div>
     </div>
 
@@ -140,174 +160,182 @@
         const SB_KEY = 'sb_publishable_TOAEc_Vhg5zYVf6ue7HEuA_GjcB3Bug'; 
         const client = createClient(SB_URL, SB_KEY);
 
-        let servicios = [];
-        let alumnos = [];
-        let pagosIDs = [];
-        let servicioActivo = null;
-        let tabActual = 'pendientes';
+        let serviciosTotal = []; let alumnos = []; let pagosIDs = [];
+        let servicioActivo = null; let nombreGrupoActivo = ""; let tabActual = 'pendientes';
+        let nivelActual = 1; let userSession = null;
 
-        async function appInit() {
-            const { data: aluData } = await client.from('alumnos').select('*').order('nombres_y_apellidos');
-            alumnos = aluData || [];
+        async function manejarLogin() {
+            const btn = document.getElementById('btnLogin');
+            // .trim() es vital para evitar el error de "clave incorrecta" por espacios accidentales
+            const email = document.getElementById('logEmail').value.trim(); 
+            const pass = document.getElementById('logPass').value.trim();
+            
+            btn.innerText = "VERIFICANDO...";
+            document.getElementById('logError').innerText = "";
+
+            const { data, error } = await client.auth.signInWithPassword({ email, password: pass });
+            
+            if(error) {
+                console.error("Supabase Auth Error:", error.message);
+                document.getElementById('logError').innerText = "Correo o clave incorrectos";
+                btn.innerText = "ENTRAR AL SISTEMA";
+                return;
+            }
+            userSession = data.user;
+            await iniciarApp();
+        }
+
+        async function iniciarApp() {
+            document.getElementById('vistaLogin').classList.add('hidden');
+            document.getElementById('appContent').classList.remove('hidden');
+            
+            // Cargamos alumnos usando 'identificacion' (sin tilde) como base
+            const { data } = await client.from('alumnos').select('*').order('nombres_y_apellidos');
+            alumnos = data || [];
             await cargarServicios();
+        }
+
+        async function cerrarSesion() {
+            await client.auth.signOut();
+            location.reload();
         }
 
         async function cargarServicios() {
             const { data } = await client.from('servicios').select('*').order('created_at', { ascending: false });
-            servicios = data || [];
+            serviciosTotal = data || [];
+            const nombresUnicos = [...new Set(serviciosTotal.map(s => s.nombre))];
             const container = document.getElementById('renderServicios');
-            
-            if(servicios.length === 0) {
-                container.innerHTML = `<p style="text-align:center; padding:50px; color:#bdc3c7; font-weight:700;">No hay controles.<br>Toca (+) para crear uno.</p>`;
-                return;
-            }
-
-            container.innerHTML = servicios.map(s => `
-                <div class="card-servicio" onclick="verDetalle(${s.id})">
-                    <div class="info-ser">
-                        <h3>${s.nombre}</h3>
-                        <p>${s.mes} • S/ ${parseFloat(s.monto).toFixed(2)}</p>
-                    </div>
-                    <div class="flecha-ir">❯</div>
-                </div>
-            `).join('');
+            container.innerHTML = nombresUnicos.length ? nombresUnicos.map(n => `
+                <div class="card-servicio" onclick="irANivel2('${n}')">
+                    <div class="info-ser"><h3>${n}</h3><p>Ver meses disponibles</p></div>
+                    <div style="color:var(--primary)">❯</div>
+                </div>`).join('') : '<p style="text-align:center; padding:50px; color:#bdc3c7;">Presione (+) para crear.</p>';
         }
 
-        async function crearServiciosMultiples() {
-            const nombre = document.getElementById('newNombre').value;
-            const monto = document.getElementById('newMonto').value;
-            const selectMes = document.getElementById('newMes');
-            const mesesElegidos = Array.from(selectMes.selectedOptions).map(opt => opt.value);
-
-            if(!nombre || !monto || mesesElegidos.length === 0) {
-                return alert("Por favor completa el nombre, monto y selecciona al menos un mes.");
-            }
-
-            const nuevosRegistros = mesesElegidos.map(m => ({
-                nombre: nombre,
-                monto: monto,
-                mes: m
-            }));
-
-            const { error } = await client.from('servicios').insert(nuevosRegistros);
-            
-            if(error) {
-                alert("Error al guardar: " + error.message);
-            } else {
-                cerrarModal('modalNuevo');
-                await cargarServicios();
-                // Limpiar campos
-                document.getElementById('newNombre').value = "";
-                document.getElementById('newMonto').value = "";
-                selectMes.selectedIndex = -1;
-            }
-        }
-
-        async function verDetalle(id) {
-            servicioActivo = servicios.find(s => s.id === id);
-            document.getElementById('mainTitle').innerText = servicioActivo.nombre.toUpperCase();
-            document.getElementById('subTitle').innerText = `Mes: ${servicioActivo.mes} | S/ ${servicioActivo.monto}`;
-            
-            document.getElementById('vistaHome').classList.add('hidden');
-            document.getElementById('vistaDetalle').classList.remove('hidden');
+        function irANivel2(nombre) {
+            nivelActual = 2;
+            nombreGrupoActivo = nombre;
+            document.getElementById('vistaNivel1').classList.add('hidden');
+            document.getElementById('vistaNivel2').classList.remove('hidden');
             document.getElementById('btnBack').style.display = 'flex';
+            document.getElementById('mainTitle').innerText = nombre.toUpperCase();
             
+            const meses = serviciosTotal.filter(s => s.nombre === nombre).sort((a,b) => a.id - b.id);
+            document.getElementById('renderMosaico').innerHTML = meses.map(s => `
+                <div class="btn-mes-card" onclick="irANivel3(${s.id})">
+                    <h4>${s.mes.substring(0,3)}</h4>
+                    <p>S/ ${s.monto}</p>
+                </div>`).join('');
+        }
+
+        async function irANivel3(idServicio) {
+            nivelActual = 3;
+            servicioActivo = serviciosTotal.find(s => s.id === idServicio);
+            document.getElementById('vistaNivel2').classList.add('hidden');
+            document.getElementById('vistaNivel3').classList.remove('hidden');
+            document.getElementById('subTitle').innerText = `MES: ${servicioActivo.mes.toUpperCase()}`;
             await actualizarListaPagos();
+        }
+
+        function navegarAtras() {
+            if(nivelActual === 3) {
+                nivelActual = 2;
+                document.getElementById('vistaNivel3').classList.add('hidden');
+                document.getElementById('vistaNivel2').classList.remove('hidden');
+                document.getElementById('subTitle').innerText = "Gestión Verde 2026";
+            } else if(nivelActual === 2) {
+                nivelActual = 1;
+                document.getElementById('vistaNivel2').classList.add('hidden');
+                document.getElementById('vistaNivel1').classList.remove('hidden');
+                document.getElementById('btnBack').style.display = 'none';
+                document.getElementById('mainTitle').innerText = "DOMINGO SABIO";
+            }
         }
 
         async function actualizarListaPagos() {
             const { data } = await client.from('pagos').select('alumno_id').eq('servicio_id', servicioActivo.id);
-            pagosIDs = data.map(p => p.alumno_id);
+            pagosIDs = data ? data.map(p => p.alumno_id) : [];
             renderAlumnos();
         }
 
         function renderAlumnos() {
             const container = document.getElementById('renderAlumnos');
             container.innerHTML = "";
+            // Usando 'identificacion' exactamente como en tu captura de BD
+            const filtrados = alumnos.filter(al => (tabActual === 'pagados' ? pagosIDs.includes(al.identificacion) : !pagosIDs.includes(al.identificacion)));
             
-            const filtrados = alumnos.filter(al => {
-                const pagado = pagosIDs.includes(al.identificacion);
-                return tabActual === 'pagados' ? pagado : !pagado;
-            });
-
             document.getElementById('statMonto').innerText = `S/ ${pagosIDs.length * servicioActivo.monto}`;
             document.getElementById('statFaltan').innerText = alumnos.length - pagosIDs.length;
-
-            if(filtrados.length === 0) {
-                container.innerHTML = `<div style="text-align:center; padding:40px; color:#bdc3c7; font-weight:700;">No hay alumnos aquí</div>`;
-                return;
-            }
-
+            
             filtrados.forEach(al => {
-                const esPagado = tabActual === 'pagados';
+                const esP = tabActual === 'pagados';
                 container.innerHTML += `
-                    <div class="card-alumno">
-                        <div class="nombre-alumno">${al.nombres_y_apellidos}</div>
-                        <button class="btn-accion ${esPagado ? 'pagado' : ''}" onclick="abrirConfirmacion(${al.identificacion}, '${al.nombres_y_apellidos}', ${esPagado})">
-                            ${esPagado ? '🔄' : '○'}
+                <div class="card-alumno">
+                    <div class="nombre-alumno">${al.nombres_y_apellidos}</div>
+                    <div class="acciones-alumno">
+                        ${!esP ? `<button class="btn-ws-alumno" onclick="enviarWAPrivado('${al.nombres_y_apellidos}')">WA</button>` : ''}
+                        <button class="btn-accion ${esP ? 'pagado' : ''}" onclick="abrirConfirmacion(${al.identificacion}, '${al.nombres_y_apellidos}', ${esP})">
+                            ${esP ? '🔄' : '○'}
                         </button>
                     </div>
-                `;
+                </div>`;
             });
         }
 
-        function abrirConfirmacion(id, nombre, yaPagado) {
-            const modal = document.getElementById('modalConfirmar');
-            document.getElementById('confTitulo').innerText = yaPagado ? "Anular Pago" : "Registrar Pago";
-            document.getElementById('confCuerpo').innerHTML = yaPagado ? 
-                `¿Deseas revertir el pago de <b>${nombre}</b>?` : 
-                `¿Confirmas el pago de S/ ${servicioActivo.monto} de <b>${nombre}</b>?`;
-            
-            modal.style.display = 'flex';
-            document.getElementById('btnAceptarConf').onclick = () => procesarCambio(id, yaPagado);
+        function enviarWAPrivado(nombre) {
+            const msj = `Hola, recordamos que el pago de ${servicioActivo.nombre} (${servicioActivo.mes.toUpperCase()}) de ${nombre} está pendiente. Monto: S/ ${servicioActivo.monto}. Atte: Tesorería.`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(msj)}`);
         }
 
-        async function procesarCambio(idAlu, yaPagado) {
-            cerrarModal('modalConfirmar');
-            if(yaPagado) {
-                await client.from('pagos').delete().eq('alumno_id', idAlu).eq('servicio_id', servicioActivo.id);
-            } else {
-                await client.from('pagos').insert([{ alumno_id: idAlu, servicio_id: servicioActivo.id }]);
-            }
-            await actualizarListaPagos();
+        function enviarAvisoGrupal() {
+            const faltantes = alumnos.length - pagosIDs.length;
+            const msj = `📢 *AVISO DE TESORERÍA*\nEstimados padres del aula, les informamos que al día de hoy contamos con *${faltantes} pagos pendientes* para el mes de ${servicioActivo.mes.toUpperCase()}. Agradecemos su pronta regularización para cumplir con las metas del aula.`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(msj)}`);
         }
 
-        function cambiarTab(t) {
-            tabActual = t;
-            document.getElementById('tabPen').classList.toggle('active', t === 'pendientes');
-            document.getElementById('tabPag').classList.toggle('active', t === 'pagados');
-            renderAlumnos();
+        async function crearServiciosMultiples() {
+            const n = document.getElementById('newNombre').value;
+            const m = document.getElementById('newMonto').value;
+            const meses = Array.from(document.getElementById('newMes').selectedOptions).map(o => o.value);
+            if(!n || !m || !meses.length) return alert("Complete los datos.");
+            const { error } = await client.from('servicios').insert(meses.map(mes => ({ nombre: n, monto: m, mes: mes })));
+            if(error) return alert(error.message);
+            cerrarModal('modalNuevo'); await cargarServicios();
         }
 
+        function abrirConfirmacion(id, nom, yaP) {
+            document.getElementById('confCuerpo').innerHTML = `¿Confirmas para <b>${nom}</b>?`;
+            document.getElementById('modalConfirmar').style.display = 'flex';
+            document.getElementById('btnAceptarConf').onclick = async () => {
+                cerrarModal('modalConfirmar');
+                if(yaP) await client.from('pagos').delete().eq('alumno_id', id).eq('servicio_id', servicioActivo.id);
+                else await client.from('pagos').insert([{ alumno_id: id, servicio_id: servicioActivo.id }]);
+                await actualizarListaPagos();
+            };
+        }
+
+        function cambiarTab(t) { tabActual = t; document.getElementById('tabPen').classList.toggle('active', t === 'pendientes'); document.getElementById('tabPag').classList.toggle('active', t === 'pagados'); renderAlumnos(); }
         function abrirModal(id) { document.getElementById(id).style.display = 'flex'; }
         function cerrarModal(id) { document.getElementById(id).style.display = 'none'; }
-        function irHome() { location.reload(); }
 
-        function generarPDFV2() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            doc.setFontSize(20); doc.setTextColor(26, 115, 232);
-            doc.text("COLEGIO DOMINGO SABIO", 14, 20);
-            doc.setFontSize(11); doc.setTextColor(80);
-            doc.text(`REPORTE: ${servicioActivo.nombre.toUpperCase()} - ${servicioActivo.mes.toUpperCase()}`, 14, 30);
-
-            const dataPDF = alumnos.map(al => [
-                al.nombres_y_apellidos,
-                pagosIDs.includes(al.identificacion) ? "PAGADO" : "PENDIENTE",
-                pagosIDs.includes(al.identificacion) ? `S/ ${servicioActivo.monto}` : "S/ 0.00"
-            ]);
-
-            doc.autoTable({
-                startY: 40,
-                head: [['ESTUDIANTE', 'ESTADO', 'MONTO']],
-                body: dataPDF,
-                headStyles: { fillColor: [26, 115, 232] },
-                theme: 'striped'
-            });
-            doc.save(`Reporte_${servicioActivo.nombre}_${servicioActivo.mes}.pdf`);
+        function generarPDFConTrazabilidad() {
+            const { jsPDF } = window.jspdf; const doc = new jsPDF();
+            const trazabilidad = new Date().toLocaleString();
+            doc.setFontSize(18); doc.setTextColor(95, 150, 115); doc.text("COLEGIO DOMINGO SABIO", 14, 20);
+            doc.setFontSize(10); doc.setTextColor(100); doc.text(`REPORTE: ${servicioActivo.nombre} - MES: ${servicioActivo.mes.toUpperCase()}`, 14, 28);
+            const rows = alumnos.map(al => [al.nombres_y_apellidos, pagosIDs.includes(al.identificacion) ? "PAGADO" : "PENDIENTE", pagosIDs.includes(al.identificacion) ? `S/ ${servicioActivo.monto}` : "0.00"]);
+            doc.autoTable({ startY: 35, head: [['ALUMNO', 'ESTADO', 'MONTO']], body: rows, headStyles: {fillColor: [119, 178, 140]}, theme: 'striped', didDrawPage: (data) => {
+                doc.setFontSize(8); doc.text(`Generado por: ${userSession.email} - ${trazabilidad}`, 14, doc.internal.pageSize.height - 10);
+            }});
+            doc.save(`Reporte_${servicioActivo.mes}.pdf`);
         }
 
-        appInit();
+        client.auth.getSession().then(({ data: { session } }) => {
+            if (session) {
+                userSession = session.user;
+                iniciarApp();
+            }
+        });
     </script>
 </body>
 </html>
