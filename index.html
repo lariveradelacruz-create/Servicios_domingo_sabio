@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Domingo Sabio - Gestión Pro V2.5</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        :root { --primary: #1a73e8; --success: #2ecc71; --danger: #e74c3c; --bg: #f4f7f6; --card: #ffffff; --text: #2c3e50; }
+        body { font-family: 'Segoe UI', Roboto, sans-serif; background: var(--bg); margin: 0; color: var(--text); overflow-x: hidden; -webkit-font-smoothing: antialiased; padding-bottom: 100px; }
+        
+        /* HEADER PROFESIONAL */
+        .header { background: var(--primary); color: white; padding: 25px 15px; text-align: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 15px rgba(0,0,0,0.15); }
+        .header h1 { margin: 0; font-size: 22px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; }
+        .header p { margin: 5px 0 0; opacity: 0.9; font-size: 14px; font-weight: 500; }
+        
+        .container { padding: 20px 15px; max-width: 550px; margin: auto; }
+
+        /* DASHBOARD: CARDS DE SERVICIOS */
+        .seccion-titulo { font-size: 12px; font-weight: 800; color: #7f8c8d; margin: 25px 0 10px 5px; text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; }
+        .seccion-titulo::after { content: ""; flex: 1; height: 1px; background: #ddd; margin-left: 10px; }
+
+        .card-servicio { background: var(--card); border-radius: 18px; padding: 20px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #eee; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
+        .card-servicio:active { transform: scale(0.97); background: #f0f7ff; }
+        .info-ser h3 { margin: 0; font-size: 17px; color: var(--primary); font-weight: 800; text-transform: uppercase; }
+        .info-ser p { margin: 5px 0 0; font-size: 14px; color: #7f8c8d; font-weight: 600; text-transform: capitalize; }
+        .flecha-ir { font-size: 20px; color: #d1d1d1; font-weight: bold; }
+
+        /* TABS (SISTEMA DE PESTAÑAS) */
+        .tabs-container { background: white; position: sticky; top: 78px; z-index: 90; display: flex; border-bottom: 2px solid #eee; margin-bottom: 10px; }
+        .tab { flex: 1; text-align: center; padding: 18px; font-weight: 800; font-size: 13px; color: #95a5a6; cursor: pointer; text-transform: uppercase; transition: 0.3s; }
+        .tab.active { color: var(--primary); border-bottom: 4px solid var(--primary); background: #f8fbff; }
+
+        /* ESTADÍSTICAS RÁPIDAS */
+        .stats-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: white; padding: 18px; border-radius: 15px; border: 1px solid #e0e0e0; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .stat-item { font-weight: 700; font-size: 13px; color: #7f8c8d; text-align: center; flex: 1; }
+        .stat-item span { color: var(--primary); font-size: 20px; font-weight: 900; display: block; margin-top: 5px; }
+
+        /* LISTA DE ALUMNOS */
+        .card-alumno { background: var(--card); padding: 18px; border-radius: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #eee; box-shadow: 0 2px 8px rgba(0,0,0,0.04); animation: fadeIn 0.4s ease; }
+        .nombre-alumno { font-size: 14px; font-weight: 700; color: #34495e; text-transform: uppercase; line-height: 1.3; }
+        
+        .btn-accion { width: 48px; height: 48px; border-radius: 14px; border: 2px solid #eee; background: #fafafa; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 22px; transition: 0.3s; color: #ddd; }
+        .btn-accion.pagado { background: var(--success); border-color: var(--success); color: white; border-radius: 50%; box-shadow: 0 4px 10px rgba(46, 204, 113, 0.3); }
+
+        /* BOTÓN FLOTANTE (+) */
+        .fab { position: fixed; bottom: 30px; right: 25px; width: 65px; height: 65px; background: var(--primary); border-radius: 50%; color: white; font-size: 32px; border: none; box-shadow: 0 6px 20px rgba(26,115,232,0.4); cursor: pointer; z-index: 1000; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
+        .fab:active { transform: scale(0.9); }
+
+        /* MODALES */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 2000; backdrop-filter: blur(4px); }
+        .modal-content { background: white; width: 90%; max-width: 420px; border-radius: 25px; padding: 30px; box-shadow: 0 15px 35px rgba(0,0,0,0.2); animation: slideUp 0.3s ease; }
+        .modal-content h2 { margin: 0 0 20px; font-size: 20px; color: var(--primary); text-align: center; font-weight: 800; }
+        
+        input, select { width: 100%; padding: 14px; margin: 10px 0; border: 1px solid #ddd; border-radius: 12px; font-size: 16px; box-sizing: border-box; font-family: inherit; }
+        
+        /* Ajuste para Selección Múltiple */
+        select[multiple] { height: 150px; padding: 10px; border: 2px solid #eee; }
+        select[multiple] option { padding: 8px; border-radius: 8px; margin-bottom: 2px; font-weight: 600; }
+        select[multiple] option:checked { background: var(--primary) linear-gradient(0deg, var(--primary) 0%, var(--primary) 100%); color: white; }
+
+        .btn-principal { background: var(--primary); color: white; width: 100%; border: none; padding: 16px; border-radius: 12px; font-weight: 800; font-size: 16px; cursor: pointer; margin-top: 15px; }
+        
+        .back-btn { position: absolute; left: 15px; top: 25px; background: rgba(255,255,255,0.2); border: none; width: 42px; height: 42px; border-radius: 12px; color: white; font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+        .hidden { display: none !important; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        /* FOOTER PDF */
+        .footer-pdf { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 15px; border-top: 1px solid #eee; display: flex; justify-content: center; }
+    </style>
+</head>
+<body>
+
+    <div id="modalNuevo" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Crear Controles</h2>
+            <p style="text-align:center; color:#7f8c8d; font-size: 13px; margin-bottom: 15px;">Selecciona los meses que deseas activar.</p>
+            <input type="text" id="newNombre" placeholder="Título (ej: Pensión)">
+            <input type="number" id="newMonto" placeholder="Monto S/ (ej: 50)">
+            <select id="newMes" multiple>
+                <option value="marzo">Marzo</option><option value="abril">Abril</option>
+                <option value="mayo">Mayo</option><option value="junio">Junio</option>
+                <option value="julio">Julio</option><option value="agosto">Agosto</option>
+                <option value="septiembre">Septiembre</option><option value="octubre">Octubre</option>
+                <option value="noviembre">Noviembre</option><option value="diciembre">Diciembre</option>
+            </select>
+            <button class="btn-principal" onclick="crearServiciosMultiples()">GENERAR CONTROLES</button>
+            <button onclick="cerrarModal('modalNuevo')" style="width:100%; background:none; border:none; color:#95a5a6; margin-top:15px; font-weight:700; cursor:pointer;">Cancelar</button>
+        </div>
+    </div>
+
+    <div id="modalConfirmar" class="modal-overlay">
+        <div class="modal-content">
+            <h2 id="confTitulo">Confirmar</h2>
+            <p id="confCuerpo" style="text-align:center; font-size: 16px; color: #555; line-height: 1.5;"></p>
+            <button class="btn-principal" id="btnAceptarConf">CONFIRMAR</button>
+            <button onclick="cerrarModal('modalConfirmar')" style="width:100%; background:none; border:none; color:#95a5a6; margin-top:15px; font-weight:700; cursor:pointer;">Cancelar</button>
+        </div>
+    </div>
+
+    <div class="header">
+        <button id="btnBack" class="back-btn" style="display:none" onclick="irHome()">←</button>
+        <h1 id="mainTitle">DOMINGO SABIO</h1>
+        <p id="subTitle">Gestión de Pagos 2026</p>
+    </div>
+
+    <div id="vistaHome" class="container">
+        <div class="seccion-titulo">Controles Activos</div>
+        <div id="renderServicios"></div>
+        <button class="fab" onclick="abrirModal('modalNuevo')">+</button>
+    </div>
+
+    <div id="vistaDetalle" class="hidden">
+        <div class="tabs-container">
+            <div id="tabPen" class="tab active" onclick="cambiarTab('pendientes')">Pendientes</div>
+            <div id="tabPag" class="tab" onclick="cambiarTab('pagados')">Pagados ✅</div>
+        </div>
+
+        <div class="container">
+            <div class="stats-bar">
+                <div class="stat-item">Recaudado <span id="statMonto">S/ 0</span></div>
+                <div class="stat-item">Faltantes <span id="statFaltan">0</span></div>
+            </div>
+            
+            <div id="renderAlumnos"></div>
+        </div>
+
+        <div class="footer-pdf">
+            <button class="btn-principal" style="background:var(--danger); max-width:520px;" onclick="generarPDFV2()">📄 GENERAR REPORTE PDF</button>
+        </div>
+    </div>
+
+    <script>
+        const { createClient } = supabase;
+        const SB_URL = 'https://qjillkydcyacgrdkknqx.supabase.co'; 
+        const SB_KEY = 'sb_publishable_TOAEc_Vhg5zYVf6ue7HEuA_GjcB3Bug'; 
+        const client = createClient(SB_URL, SB_KEY);
+
+        let servicios = [];
+        let alumnos = [];
+        let pagosIDs = [];
+        let servicioActivo = null;
+        let tabActual = 'pendientes';
+
+        async function appInit() {
+            const { data: aluData } = await client.from('alumnos').select('*').order('nombres_y_apellidos');
+            alumnos = aluData || [];
+            await cargarServicios();
+        }
+
+        async function cargarServicios() {
+            const { data } = await client.from('servicios').select('*').order('created_at', { ascending: false });
+            servicios = data || [];
+            const container = document.getElementById('renderServicios');
+            
+            if(servicios.length === 0) {
+                container.innerHTML = `<p style="text-align:center; padding:50px; color:#bdc3c7; font-weight:700;">No hay controles.<br>Toca (+) para crear uno.</p>`;
+                return;
+            }
+
+            container.innerHTML = servicios.map(s => `
+                <div class="card-servicio" onclick="verDetalle(${s.id})">
+                    <div class="info-ser">
+                        <h3>${s.nombre}</h3>
+                        <p>${s.mes} • S/ ${parseFloat(s.monto).toFixed(2)}</p>
+                    </div>
+                    <div class="flecha-ir">❯</div>
+                </div>
+            `).join('');
+        }
+
+        async function crearServiciosMultiples() {
+            const nombre = document.getElementById('newNombre').value;
+            const monto = document.getElementById('newMonto').value;
+            const selectMes = document.getElementById('newMes');
+            const mesesElegidos = Array.from(selectMes.selectedOptions).map(opt => opt.value);
+
+            if(!nombre || !monto || mesesElegidos.length === 0) {
+                return alert("Por favor completa el nombre, monto y selecciona al menos un mes.");
+            }
+
+            const nuevosRegistros = mesesElegidos.map(m => ({
+                nombre: nombre,
+                monto: monto,
+                mes: m
+            }));
+
+            const { error } = await client.from('servicios').insert(nuevosRegistros);
+            
+            if(error) {
+                alert("Error al guardar: " + error.message);
+            } else {
+                cerrarModal('modalNuevo');
+                await cargarServicios();
+                // Limpiar campos
+                document.getElementById('newNombre').value = "";
+                document.getElementById('newMonto').value = "";
+                selectMes.selectedIndex = -1;
+            }
+        }
+
+        async function verDetalle(id) {
+            servicioActivo = servicios.find(s => s.id === id);
+            document.getElementById('mainTitle').innerText = servicioActivo.nombre.toUpperCase();
+            document.getElementById('subTitle').innerText = `Mes: ${servicioActivo.mes} | S/ ${servicioActivo.monto}`;
+            
+            document.getElementById('vistaHome').classList.add('hidden');
+            document.getElementById('vistaDetalle').classList.remove('hidden');
+            document.getElementById('btnBack').style.display = 'flex';
+            
+            await actualizarListaPagos();
+        }
+
+        async function actualizarListaPagos() {
+            const { data } = await client.from('pagos').select('alumno_id').eq('servicio_id', servicioActivo.id);
+            pagosIDs = data.map(p => p.alumno_id);
+            renderAlumnos();
+        }
+
+        function renderAlumnos() {
+            const container = document.getElementById('renderAlumnos');
+            container.innerHTML = "";
+            
+            const filtrados = alumnos.filter(al => {
+                const pagado = pagosIDs.includes(al.identificacion);
+                return tabActual === 'pagados' ? pagado : !pagado;
+            });
+
+            document.getElementById('statMonto').innerText = `S/ ${pagosIDs.length * servicioActivo.monto}`;
+            document.getElementById('statFaltan').innerText = alumnos.length - pagosIDs.length;
+
+            if(filtrados.length === 0) {
+                container.innerHTML = `<div style="text-align:center; padding:40px; color:#bdc3c7; font-weight:700;">No hay alumnos aquí</div>`;
+                return;
+            }
+
+            filtrados.forEach(al => {
+                const esPagado = tabActual === 'pagados';
+                container.innerHTML += `
+                    <div class="card-alumno">
+                        <div class="nombre-alumno">${al.nombres_y_apellidos}</div>
+                        <button class="btn-accion ${esPagado ? 'pagado' : ''}" onclick="abrirConfirmacion(${al.identificacion}, '${al.nombres_y_apellidos}', ${esPagado})">
+                            ${esPagado ? '🔄' : '○'}
+                        </button>
+                    </div>
+                `;
+            });
+        }
+
+        function abrirConfirmacion(id, nombre, yaPagado) {
+            const modal = document.getElementById('modalConfirmar');
+            document.getElementById('confTitulo').innerText = yaPagado ? "Anular Pago" : "Registrar Pago";
+            document.getElementById('confCuerpo').innerHTML = yaPagado ? 
+                `¿Deseas revertir el pago de <b>${nombre}</b>?` : 
+                `¿Confirmas el pago de S/ ${servicioActivo.monto} de <b>${nombre}</b>?`;
+            
+            modal.style.display = 'flex';
+            document.getElementById('btnAceptarConf').onclick = () => procesarCambio(id, yaPagado);
+        }
+
+        async function procesarCambio(idAlu, yaPagado) {
+            cerrarModal('modalConfirmar');
+            if(yaPagado) {
+                await client.from('pagos').delete().eq('alumno_id', idAlu).eq('servicio_id', servicioActivo.id);
+            } else {
+                await client.from('pagos').insert([{ alumno_id: idAlu, servicio_id: servicioActivo.id }]);
+            }
+            await actualizarListaPagos();
+        }
+
+        function cambiarTab(t) {
+            tabActual = t;
+            document.getElementById('tabPen').classList.toggle('active', t === 'pendientes');
+            document.getElementById('tabPag').classList.toggle('active', t === 'pagados');
+            renderAlumnos();
+        }
+
+        function abrirModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function cerrarModal(id) { document.getElementById(id).style.display = 'none'; }
+        function irHome() { location.reload(); }
+
+        function generarPDFV2() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.setFontSize(20); doc.setTextColor(26, 115, 232);
+            doc.text("COLEGIO DOMINGO SABIO", 14, 20);
+            doc.setFontSize(11); doc.setTextColor(80);
+            doc.text(`REPORTE: ${servicioActivo.nombre.toUpperCase()} - ${servicioActivo.mes.toUpperCase()}`, 14, 30);
+
+            const dataPDF = alumnos.map(al => [
+                al.nombres_y_apellidos,
+                pagosIDs.includes(al.identificacion) ? "PAGADO" : "PENDIENTE",
+                pagosIDs.includes(al.identificacion) ? `S/ ${servicioActivo.monto}` : "S/ 0.00"
+            ]);
+
+            doc.autoTable({
+                startY: 40,
+                head: [['ESTUDIANTE', 'ESTADO', 'MONTO']],
+                body: dataPDF,
+                headStyles: { fillColor: [26, 115, 232] },
+                theme: 'striped'
+            });
+            doc.save(`Reporte_${servicioActivo.nombre}_${servicioActivo.mes}.pdf`);
+        }
+
+        appInit();
+    </script>
+</body>
+</html>
