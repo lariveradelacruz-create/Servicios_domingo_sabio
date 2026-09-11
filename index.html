@@ -774,15 +774,43 @@
             doc.setFontSize(10); doc.setTextColor(100);
             doc.text(`INFORME DE INGRESOS Y EGRESOS - MES: ${mesInformeActivo.toUpperCase()}`, 14, 28);
 
+            // RESUMEN ACUMULADO: mes a mes, desde marzo hasta el mes actual,
+            // para que se vea de dónde sale el saldo arrastrado.
+            doc.setFontSize(11); doc.setTextColor(52, 73, 94);
+            doc.text("RESUMEN ACUMULADO (mes a mes)", 14, 35);
+            const idxActual = MESES_INFORME.indexOf(mesInformeActivo);
+            let acumuladoCorrido = 0;
+            const filasResumen = [];
+            for (let i = 0; i <= idxActual; i++) {
+                const mesI = MESES_INFORME[i];
+                const { totalIngresos: ingI, totalEgresos: egI } = totalesMesInforme(mesI);
+                const egresosMesI = informeEgresos.filter(e => e.mes === mesI);
+                const detalleEgresosI = egresosMesI.length
+                    ? egresosMesI.map(e => `${e.concepto} S/${Number(e.monto).toFixed(2)}`).join(' + ')
+                    : 'sin egresos';
+                acumuladoCorrido += ingI - egI;
+                filasResumen.push([
+                    mesI.toUpperCase(),
+                    `S/ ${ingI.toFixed(2)}`,
+                    `S/ ${egI.toFixed(2)} (${detalleEgresosI})`,
+                    `S/ ${acumuladoCorrido.toFixed(2)}`
+                ]);
+            }
+            doc.autoTable({ startY: 39, head: [['MES', 'INGRESOS', 'EGRESOS', 'SALDO ACUM.']], body: filasResumen, headStyles: { fillColor: [52, 73, 94] }, theme: 'grid', styles: { fontSize: 8 } });
+
+            let y = doc.lastAutoTable.finalY + 12;
+            doc.setFontSize(11); doc.setTextColor(95, 150, 115);
+            doc.text(`INGRESOS DEL MES: ${mesInformeActivo.toUpperCase()}`, 14, y); y += 5;
+
             const ingresosMes = informeIngresos.filter(i => i.mes === mesInformeActivo);
             const filasIngresoResumen = ingresosMes.map(i => {
                 const total = totalesIngresoConcepto(i);
                 const n = informeDetalle.filter(d => d.ingreso_id === i.id).length;
                 return [i.concepto, n, `S/ ${total.toFixed(2)}`];
             });
-            doc.autoTable({ startY: 35, head: [['CONCEPTO INGRESO', 'ALUMNOS', 'TOTAL']], body: filasIngresoResumen.length ? filasIngresoResumen : [['-', '-', 'Sin ingresos']], headStyles: { fillColor: [119, 178, 140] }, theme: 'striped' });
+            doc.autoTable({ startY: y, head: [['CONCEPTO INGRESO', 'ALUMNOS', 'TOTAL']], body: filasIngresoResumen.length ? filasIngresoResumen : [['-', '-', 'Sin ingresos']], headStyles: { fillColor: [119, 178, 140] }, theme: 'striped' });
 
-            let y = doc.lastAutoTable.finalY + 10;
+            y = doc.lastAutoTable.finalY + 10;
             const filasDetalle = [];
             ingresosMes.forEach(i => {
                 informeDetalle.filter(d => d.ingreso_id === i.id).forEach(d => {
@@ -798,7 +826,7 @@
 
             const egresosMes = informeEgresos.filter(e => e.mes === mesInformeActivo);
             const filasEgresos = egresosMes.map(e => [e.fecha, e.concepto, `S/ ${Number(e.monto).toFixed(2)}`]);
-            doc.setFontSize(11); doc.setTextColor(231, 76, 60); doc.text("EGRESOS", 14, y); y += 5;
+            doc.setFontSize(11); doc.setTextColor(231, 76, 60); doc.text(`EGRESOS DEL MES: ${mesInformeActivo.toUpperCase()}`, 14, y); y += 5;
             doc.autoTable({ startY: y, head: [['FECHA', 'CONCEPTO', 'MONTO']], body: filasEgresos.length ? filasEgresos : [['-', 'Sin egresos', '-']], headStyles: { fillColor: [231, 76, 60] }, theme: 'grid' });
             y = doc.lastAutoTable.finalY + 12;
 
