@@ -195,10 +195,6 @@
                 <div class="seccion-titulo">Conceptos Registrados</div>
                 <div id="renderIngresosInforme"></div>
 
-                <div class="seccion-titulo">Egresos Generales del Mes</div>
-                <div id="renderEgresosInforme"></div>
-                <button class="btn-danger-mod" onclick="abrirModalNuevoEgreso()">+ NUEVO EGRESO GENERAL</button>
-
                 <button onclick="generarPDFInforme()" style="width:100%; background:none; border:none; color:#7f8c8d; font-weight:800; cursor:pointer; text-decoration:underline; margin-top:25px;">DESCARGAR PDF DEL MES</button>
             </div>
         </div>
@@ -611,17 +607,6 @@
                     <button class="btn-delete-card" onclick="preguntarBorrarIngreso(${i.id}, '${i.concepto.replace(/'/g, "\\'")}')">🗑️</button>
                 </div>`;
             }).join('') : '<p style="text-align:center; padding:20px; color:#bdc3c7;">Sin conceptos registrados. Presione "+ NUEVO CONCEPTO" para crear el primero.</p>';
-
-            const egresosMes = informeEgresos.filter(e => e.mes === mesInformeActivo);
-            document.getElementById('renderEgresosInforme').innerHTML = egresosMes.length ? egresosMes.map(e => `
-                <div class="card-servicio">
-                    <div class="info-ser" style="cursor:default;">
-                        <h3>${e.concepto}</h3>
-                        <span class="total-tag">S/ ${Number(e.monto).toFixed(2)}</span>
-                        <p>${e.fecha}</p>
-                    </div>
-                    <button class="btn-delete-card" onclick="preguntarBorrarEgreso(${e.id})">🗑️</button>
-                </div>`).join('') : '<p style="text-align:center; padding:20px; color:#bdc3c7;">Sin egresos este mes.</p>';
         }
 
         function abrirModalNuevoIngreso() {
