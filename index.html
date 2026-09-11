@@ -131,6 +131,38 @@
             </div>
         </div>
 
+        <div id="modalNuevoIngreso" class="modal-overlay">
+            <div class="modal-content">
+                <h2 style="text-align:center; color:var(--primary-dark);">Nuevo Ingreso</h2>
+                <input type="text" id="newIngresoConcepto" placeholder="Concepto (ej: Aporte del aula)">
+                <input type="number" id="newIngresoMonto" placeholder="Monto por alumno S/">
+                <button class="btn-principal" onclick="crearIngreso()">GUARDAR</button>
+                <button onclick="cerrarModal('modalNuevoIngreso')" style="width:100%; background:none; border:none; color:#95a5a6; margin-top:15px; cursor:pointer;">Cancelar</button>
+            </div>
+        </div>
+
+        <div id="modalNuevoEgreso" class="modal-overlay">
+            <div class="modal-content">
+                <h2 style="text-align:center; color:var(--danger);">Nuevo Egreso</h2>
+                <input type="text" id="newEgresoConcepto" placeholder="Concepto (ej: Material de aula)">
+                <input type="number" id="newEgresoMonto" placeholder="Monto S/">
+                <input type="date" id="newEgresoFecha">
+                <button class="btn-danger-mod" onclick="crearEgreso()">GUARDAR</button>
+                <button onclick="cerrarModal('modalNuevoEgreso')" style="width:100%; background:none; border:none; color:#95a5a6; margin-top:15px; cursor:pointer;">Cancelar</button>
+            </div>
+        </div>
+
+        <div id="modalNuevoAlumnoInforme" class="modal-overlay">
+            <div class="modal-content">
+                <h2 style="text-align:center; color:var(--primary-dark);">Nuevo Alumno</h2>
+                <input type="number" id="newAlumnoIdInforme" placeholder="N° identificación">
+                <input type="text" id="newAlumnoNombreInforme" placeholder="Nombres y apellidos">
+                <input type="text" id="newAlumnoGradoInforme" placeholder="Grado (opcional)">
+                <button class="btn-principal" onclick="crearAlumnoYAgregarAIngreso()">GUARDAR Y AGREGAR</button>
+                <button onclick="cerrarModal('modalNuevoAlumnoInforme')" style="width:100%; background:none; border:none; color:#95a5a6; margin-top:15px; cursor:pointer;">Cancelar</button>
+            </div>
+        </div>
+
         <div class="header">
             <button id="btnBack" class="back-btn" style="display:none" onclick="navegarAtras()">←</button>
             <h1 id="mainTitle">DOMINGO SABIO</h1>
@@ -141,7 +173,47 @@
             <div class="seccion-titulo">Servicios Registrados</div>
             <div id="renderServicios"></div>
             <button class="fab" onclick="abrirModal('modalNuevo')">+</button>
-            <button onclick="cerrarSesion()" style="width:100%; background:none; border:none; color:#95a5a6; margin-top:40px; font-weight:bold; cursor:pointer;">CERRAR SESIÓN</button>
+            <button class="btn-principal" style="background:var(--primary-dark); margin-top:30px;" onclick="irAInforme()">📊 INFORME INGRESOS Y EGRESOS</button>
+            <button onclick="cerrarSesion()" style="width:100%; background:none; border:none; color:#95a5a6; margin-top:15px; font-weight:bold; cursor:pointer;">CERRAR SESIÓN</button>
+        </div>
+
+        <div id="vistaInformeMeses" class="container hidden">
+            <div class="seccion-titulo">Ingresos y Egresos — Seleccione un Mes</div>
+            <div id="renderMosaicoInforme" class="mosaico-meses"></div>
+        </div>
+
+        <div id="vistaInformeMes" class="hidden">
+            <div class="container">
+                <div class="stats-bar">
+                    <div class="stat-item">Ingresos <span id="statIngresos" style="color:var(--success);">S/ 0</span></div>
+                    <div class="stat-item">Egresos <span id="statEgresos" style="color:var(--danger);">S/ 0</span></div>
+                    <div class="stat-item">Saldo <span id="statSaldo">S/ 0</span></div>
+                </div>
+
+                <div class="seccion-titulo">Ingresos</div>
+                <div id="renderIngresosInforme"></div>
+                <button class="btn-principal" onclick="abrirModalNuevoIngreso()">+ NUEVO INGRESO</button>
+
+                <div class="seccion-titulo">Egresos</div>
+                <div id="renderEgresosInforme"></div>
+                <button class="btn-danger-mod" onclick="abrirModalNuevoEgreso()">+ NUEVO EGRESO</button>
+
+                <button onclick="generarPDFInforme()" style="width:100%; background:none; border:none; color:#7f8c8d; font-weight:800; cursor:pointer; text-decoration:underline; margin-top:25px;">DESCARGAR PDF DEL MES</button>
+            </div>
+        </div>
+
+        <div id="vistaInformeIngresoDetalle" class="hidden">
+            <div class="container">
+                <div class="stats-bar">
+                    <div class="stat-item">Total Recaudado <span id="totalIngresoDetalle">S/ 0</span></div>
+                </div>
+                <div id="renderDetalleAlumnos"></div>
+                <div style="display:flex; gap:8px; margin-top:15px;">
+                    <select id="selectAgregarAlumno" style="flex:1; padding:14px; border-radius:12px; border:1px solid #ddd;"></select>
+                    <button class="btn-accion" onclick="agregarAlumnoExistenteAIngreso()">➕</button>
+                </div>
+                <button class="btn-principal" onclick="abrirModalNuevoAlumnoInforme()">+ CREAR NUEVO ALUMNO</button>
+            </div>
         </div>
 
         <div id="vistaNivel2" class="container hidden">
@@ -178,6 +250,17 @@
         let servicioActivo = null; let tabActual = 'pendientes';
         let nivelActual = 1; let userSession = null;
         let mesesSeleccionados = [];
+
+        // INFORME DE INGRESOS Y EGRESOS
+        const MESES_INFORME = ['marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+        let informeIngresos = []; let informeDetalle = []; let informeEgresos = [];
+        let modoActual = 'servicios'; let informeNivel = 1;
+        let mesInformeActivo = null; let ingresoActivo = null;
+
+        function hoyStr() {
+            const d = new Date();
+            return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        }
 
         async function manejarLogin() {
             const btn = document.getElementById('btnLogin');
@@ -309,6 +392,7 @@
         }
 
         function navegarAtras() {
+            if(modoActual === 'informe') { navegarAtrasInforme(); return; }
             if(nivelActual === 3) { nivelActual = 2; document.getElementById('vistaNivel3').classList.add('hidden'); document.getElementById('vistaNivel2').classList.remove('hidden'); document.getElementById('subTitle').innerText = "Gestión Verde 2026"; }
             else if(nivelActual === 2) { 
                 nivelActual = 1; 
@@ -392,6 +476,325 @@
                 doc.setFontSize(8); doc.text(`Generado por: ${userSession.email} - ${trazabilidad}`, 14, doc.internal.pageSize.height - 10);
             }});
             doc.save(`Reporte_${servicioActivo.mes}.pdf`);
+        }
+
+        // ===== INFORME DE INGRESOS Y EGRESOS =====
+
+        async function cargarInforme() {
+            const [ri, rd, re] = await Promise.all([
+                client.from('informe_ingresos').select('*'),
+                client.from('informe_ingreso_detalle').select('*'),
+                client.from('informe_egresos').select('*')
+            ]);
+            informeIngresos = ri.data || [];
+            informeDetalle = rd.data || [];
+            informeEgresos = re.data || [];
+        }
+
+        function totalesIngresoConcepto(ingreso) {
+            return informeDetalle.filter(d => d.ingreso_id === ingreso.id).reduce((s, d) => s + Number(d.monto), 0);
+        }
+
+        function totalesMesInforme(mes) {
+            const ingresosMes = informeIngresos.filter(i => i.mes === mes);
+            const totalIngresos = ingresosMes.reduce((s, i) => s + totalesIngresoConcepto(i), 0);
+            const totalEgresos = informeEgresos.filter(e => e.mes === mes).reduce((s, e) => s + Number(e.monto), 0);
+            return { totalIngresos, totalEgresos, saldo: totalIngresos - totalEgresos };
+        }
+
+        async function irAInforme() {
+            modoActual = 'informe';
+            informeNivel = 1;
+            document.getElementById('vistaNivel1').classList.add('hidden');
+            document.getElementById('vistaInformeMeses').classList.remove('hidden');
+            document.getElementById('btnBack').style.display = 'flex';
+            document.getElementById('mainTitle').innerText = 'INGRESOS Y EGRESOS';
+            document.getElementById('subTitle').innerText = 'Seleccione un mes';
+            await cargarInforme();
+            renderMesesInforme();
+        }
+
+        function navegarAtrasInforme() {
+            if (informeNivel === 3) {
+                informeNivel = 2;
+                document.getElementById('vistaInformeIngresoDetalle').classList.add('hidden');
+                document.getElementById('vistaInformeMes').classList.remove('hidden');
+                document.getElementById('subTitle').innerText = `MES: ${mesInformeActivo.toUpperCase()}`;
+                renderInformeMes();
+            } else if (informeNivel === 2) {
+                informeNivel = 1;
+                document.getElementById('vistaInformeMes').classList.add('hidden');
+                document.getElementById('vistaInformeMeses').classList.remove('hidden');
+                document.getElementById('mainTitle').innerText = 'INGRESOS Y EGRESOS';
+                document.getElementById('subTitle').innerText = 'Seleccione un mes';
+                renderMesesInforme();
+            } else {
+                modoActual = 'servicios';
+                document.getElementById('vistaInformeMeses').classList.add('hidden');
+                document.getElementById('vistaNivel1').classList.remove('hidden');
+                document.getElementById('btnBack').style.display = 'none';
+                document.getElementById('mainTitle').innerText = 'DOMINGO SABIO';
+                document.getElementById('subTitle').innerText = 'Gestión Verde 2026';
+            }
+        }
+
+        function renderMesesInforme() {
+            document.getElementById('renderMosaicoInforme').innerHTML = MESES_INFORME.map(mes => {
+                const { totalIngresos, totalEgresos, saldo } = totalesMesInforme(mes);
+                return `
+                <div class="btn-mes-card" onclick="irAInformeMes('${mes}')">
+                    <h4>${mes.substring(0,3)}</h4>
+                    <div class="resumen-mes">
+                        <span class="cobrado"><b>Ingresos:</b> S/ ${totalIngresos.toFixed(2)}</span><br>
+                        <b>Egresos:</b> S/ ${totalEgresos.toFixed(2)}<br>
+                        <b>Saldo:</b> <span style="color:${saldo >= 0 ? 'var(--success)' : 'var(--danger)'}">S/ ${saldo.toFixed(2)}</span>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function irAInformeMes(mes) {
+            informeNivel = 2;
+            mesInformeActivo = mes;
+            document.getElementById('vistaInformeMeses').classList.add('hidden');
+            document.getElementById('vistaInformeMes').classList.remove('hidden');
+            document.getElementById('mainTitle').innerText = 'INGRESOS Y EGRESOS';
+            document.getElementById('subTitle').innerText = `MES: ${mes.toUpperCase()}`;
+            renderInformeMes();
+        }
+
+        function renderInformeMes() {
+            const { totalIngresos, totalEgresos, saldo } = totalesMesInforme(mesInformeActivo);
+            document.getElementById('statIngresos').innerText = `S/ ${totalIngresos.toFixed(2)}`;
+            document.getElementById('statEgresos').innerText = `S/ ${totalEgresos.toFixed(2)}`;
+            const elSaldo = document.getElementById('statSaldo');
+            elSaldo.innerText = `S/ ${saldo.toFixed(2)}`;
+            elSaldo.style.color = saldo >= 0 ? 'var(--success)' : 'var(--danger)';
+
+            const ingresosMes = informeIngresos.filter(i => i.mes === mesInformeActivo);
+            document.getElementById('renderIngresosInforme').innerHTML = ingresosMes.length ? ingresosMes.map(i => {
+                const total = totalesIngresoConcepto(i);
+                const nAlumnos = informeDetalle.filter(d => d.ingreso_id === i.id).length;
+                return `
+                <div class="card-servicio">
+                    <div class="info-ser" onclick="irAIngresoDetalle(${i.id})">
+                        <h3>${i.concepto}</h3>
+                        <span class="total-tag">Recaudado: S/ ${total.toFixed(2)}</span>
+                        <p>${nAlumnos} alumno(s) incluido(s)</p>
+                    </div>
+                    <button class="btn-delete-card" onclick="preguntarBorrarIngreso(${i.id}, '${i.concepto.replace(/'/g, "\\'")}')">🗑️</button>
+                </div>`;
+            }).join('') : '<p style="text-align:center; padding:20px; color:#bdc3c7;">Sin ingresos este mes.</p>';
+
+            const egresosMes = informeEgresos.filter(e => e.mes === mesInformeActivo);
+            document.getElementById('renderEgresosInforme').innerHTML = egresosMes.length ? egresosMes.map(e => `
+                <div class="card-servicio">
+                    <div class="info-ser" style="cursor:default;">
+                        <h3>${e.concepto}</h3>
+                        <span class="total-tag">S/ ${Number(e.monto).toFixed(2)}</span>
+                        <p>${e.fecha}</p>
+                    </div>
+                    <button class="btn-delete-card" onclick="preguntarBorrarEgreso(${e.id})">🗑️</button>
+                </div>`).join('') : '<p style="text-align:center; padding:20px; color:#bdc3c7;">Sin egresos este mes.</p>';
+        }
+
+        function abrirModalNuevoIngreso() {
+            document.getElementById('newIngresoConcepto').value = '';
+            document.getElementById('newIngresoMonto').value = '';
+            abrirModal('modalNuevoIngreso');
+        }
+
+        async function crearIngreso() {
+            const concepto = document.getElementById('newIngresoConcepto').value.trim();
+            const monto = parseFloat(document.getElementById('newIngresoMonto').value);
+            if (!concepto || !monto) return alert('Complete concepto y monto.');
+            const { data, error } = await client.from('informe_ingresos').insert([{ concepto, monto_base: monto, mes: mesInformeActivo }]).select();
+            if (error) return alert(error.message);
+            const nuevoIngreso = data[0];
+            if (alumnos.length) {
+                const filas = alumnos.map(al => ({ ingreso_id: nuevoIngreso.id, alumno_id: al.identificacion, monto: monto }));
+                const { error: errDet } = await client.from('informe_ingreso_detalle').insert(filas);
+                if (errDet) return alert(errDet.message);
+            }
+            cerrarModal('modalNuevoIngreso');
+            await cargarInforme();
+            renderInformeMes();
+        }
+
+        function preguntarBorrarIngreso(id, concepto) {
+            document.getElementById('confTitulo').innerText = 'BORRAR INGRESO';
+            document.getElementById('confCuerpo').innerHTML = `¿Eliminar <b>${concepto.toUpperCase()}</b>?<br>Se borrará el detalle por alumno.`;
+            document.getElementById('btnAceptarConf').className = 'btn-danger-mod';
+            document.getElementById('modalConfirmar').style.display = 'flex';
+            document.getElementById('btnAceptarConf').onclick = async () => {
+                cerrarModal('modalConfirmar');
+                await client.from('informe_ingresos').delete().eq('id', id);
+                await cargarInforme();
+                renderInformeMes();
+            };
+        }
+
+        function irAIngresoDetalle(id) {
+            informeNivel = 3;
+            ingresoActivo = informeIngresos.find(i => i.id === id);
+            document.getElementById('vistaInformeMes').classList.add('hidden');
+            document.getElementById('vistaInformeIngresoDetalle').classList.remove('hidden');
+            document.getElementById('subTitle').innerText = `${ingresoActivo.concepto.toUpperCase()} - ${ingresoActivo.mes.toUpperCase()}`;
+            renderIngresoDetalle();
+        }
+
+        function renderIngresoDetalle() {
+            const filas = informeDetalle.filter(d => d.ingreso_id === ingresoActivo.id);
+            const total = filas.reduce((s, d) => s + Number(d.monto), 0);
+            document.getElementById('totalIngresoDetalle').innerText = `S/ ${total.toFixed(2)}`;
+
+            document.getElementById('renderDetalleAlumnos').innerHTML = filas.map(d => {
+                const al = alumnos.find(a => a.identificacion === d.alumno_id);
+                const nombre = al ? al.nombres_y_apellidos : `Alumno #${d.alumno_id}`;
+                return `
+                <div class="card-alumno">
+                    <div class="nombre-alumno">${nombre}</div>
+                    <div class="acciones-alumno">
+                        <input type="number" value="${d.monto}" style="width:80px; margin:0; padding:8px;" onchange="actualizarMontoDetalle(${d.id}, this.value)">
+                        <button class="btn-delete-card" onclick="quitarAlumnoDeIngreso(${d.id})">🗑️</button>
+                    </div>
+                </div>`;
+            }).join('');
+
+            const idsIncluidos = filas.map(d => d.alumno_id);
+            const disponibles = alumnos.filter(a => !idsIncluidos.includes(a.identificacion));
+            document.getElementById('selectAgregarAlumno').innerHTML =
+                '<option value="">-- Agregar alumno existente --</option>' +
+                disponibles.map(a => `<option value="${a.identificacion}">${a.nombres_y_apellidos}</option>`).join('');
+        }
+
+        async function actualizarMontoDetalle(detalleId, nuevoMonto) {
+            const monto = parseFloat(nuevoMonto);
+            if (isNaN(monto)) return;
+            await client.from('informe_ingreso_detalle').update({ monto }).eq('id', detalleId);
+            await cargarInforme();
+            renderIngresoDetalle();
+        }
+
+        async function quitarAlumnoDeIngreso(detalleId) {
+            await client.from('informe_ingreso_detalle').delete().eq('id', detalleId);
+            await cargarInforme();
+            renderIngresoDetalle();
+        }
+
+        async function agregarAlumnoExistenteAIngreso() {
+            const sel = document.getElementById('selectAgregarAlumno');
+            const alumnoId = parseInt(sel.value);
+            if (!alumnoId) return;
+            await client.from('informe_ingreso_detalle').insert([{ ingreso_id: ingresoActivo.id, alumno_id: alumnoId, monto: ingresoActivo.monto_base }]);
+            await cargarInforme();
+            renderIngresoDetalle();
+        }
+
+        function abrirModalNuevoAlumnoInforme() {
+            document.getElementById('newAlumnoIdInforme').value = Date.now();
+            document.getElementById('newAlumnoNombreInforme').value = '';
+            document.getElementById('newAlumnoGradoInforme').value = '';
+            abrirModal('modalNuevoAlumnoInforme');
+        }
+
+        async function crearAlumnoYAgregarAIngreso() {
+            const identificacion = parseInt(document.getElementById('newAlumnoIdInforme').value);
+            const nombre = document.getElementById('newAlumnoNombreInforme').value.trim();
+            const grado = document.getElementById('newAlumnoGradoInforme').value.trim() || 'General';
+            if (!identificacion || !nombre) return alert('Complete N° de identificación y nombre.');
+            const { data, error } = await client.from('alumnos').insert([{ identificacion, nombres_y_apellidos: nombre, grado }]).select();
+            if (error) {
+                if (error.code === '23505') return alert('Ya existe un alumno con esa identificación.');
+                return alert(error.message);
+            }
+            const nuevoAlumno = data[0];
+            alumnos.push(nuevoAlumno);
+            alumnos.sort((a, b) => a.nombres_y_apellidos.localeCompare(b.nombres_y_apellidos));
+            await client.from('informe_ingreso_detalle').insert([{ ingreso_id: ingresoActivo.id, alumno_id: nuevoAlumno.identificacion, monto: ingresoActivo.monto_base }]);
+            cerrarModal('modalNuevoAlumnoInforme');
+            await cargarInforme();
+            renderIngresoDetalle();
+        }
+
+        function abrirModalNuevoEgreso() {
+            document.getElementById('newEgresoConcepto').value = '';
+            document.getElementById('newEgresoMonto').value = '';
+            document.getElementById('newEgresoFecha').value = hoyStr();
+            abrirModal('modalNuevoEgreso');
+        }
+
+        async function crearEgreso() {
+            const concepto = document.getElementById('newEgresoConcepto').value.trim();
+            const monto = parseFloat(document.getElementById('newEgresoMonto').value);
+            const fecha = document.getElementById('newEgresoFecha').value;
+            if (!concepto || !monto || !fecha) return alert('Complete todos los campos.');
+            const { error } = await client.from('informe_egresos').insert([{ concepto, monto, fecha, mes: mesInformeActivo }]);
+            if (error) return alert(error.message);
+            cerrarModal('modalNuevoEgreso');
+            await cargarInforme();
+            renderInformeMes();
+        }
+
+        function preguntarBorrarEgreso(id) {
+            document.getElementById('confTitulo').innerText = 'BORRAR EGRESO';
+            document.getElementById('confCuerpo').innerHTML = '¿Eliminar este egreso?';
+            document.getElementById('btnAceptarConf').className = 'btn-danger-mod';
+            document.getElementById('modalConfirmar').style.display = 'flex';
+            document.getElementById('btnAceptarConf').onclick = async () => {
+                cerrarModal('modalConfirmar');
+                await client.from('informe_egresos').delete().eq('id', id);
+                await cargarInforme();
+                renderInformeMes();
+            };
+        }
+
+        function generarPDFInforme() {
+            const { jsPDF } = window.jspdf; const doc = new jsPDF();
+            const trazabilidad = new Date().toLocaleString();
+            const { totalIngresos, totalEgresos, saldo } = totalesMesInforme(mesInformeActivo);
+
+            doc.setFontSize(18); doc.setTextColor(95, 150, 115);
+            doc.text("COLEGIO DOMINGO SABIO", 14, 20);
+            doc.setFontSize(10); doc.setTextColor(100);
+            doc.text(`INFORME DE INGRESOS Y EGRESOS - MES: ${mesInformeActivo.toUpperCase()}`, 14, 28);
+
+            const ingresosMes = informeIngresos.filter(i => i.mes === mesInformeActivo);
+            const filasIngresoResumen = ingresosMes.map(i => {
+                const total = totalesIngresoConcepto(i);
+                const n = informeDetalle.filter(d => d.ingreso_id === i.id).length;
+                return [i.concepto, n, `S/ ${total.toFixed(2)}`];
+            });
+            doc.autoTable({ startY: 35, head: [['CONCEPTO INGRESO', 'ALUMNOS', 'TOTAL']], body: filasIngresoResumen.length ? filasIngresoResumen : [['-', '-', 'Sin ingresos']], headStyles: { fillColor: [119, 178, 140] }, theme: 'striped' });
+
+            let y = doc.lastAutoTable.finalY + 10;
+            const filasDetalle = [];
+            ingresosMes.forEach(i => {
+                informeDetalle.filter(d => d.ingreso_id === i.id).forEach(d => {
+                    const al = alumnos.find(a => a.identificacion === d.alumno_id);
+                    filasDetalle.push([i.concepto, al ? al.nombres_y_apellidos : `#${d.alumno_id}`, `S/ ${Number(d.monto).toFixed(2)}`]);
+                });
+            });
+            if (filasDetalle.length) {
+                doc.setFontSize(11); doc.setTextColor(95, 150, 115); doc.text("DETALLE DE INGRESOS POR ALUMNO", 14, y); y += 5;
+                doc.autoTable({ startY: y, head: [['CONCEPTO', 'ALUMNO', 'MONTO']], body: filasDetalle, headStyles: { fillColor: [119, 178, 140] }, theme: 'grid' });
+                y = doc.lastAutoTable.finalY + 10;
+            }
+
+            const egresosMes = informeEgresos.filter(e => e.mes === mesInformeActivo);
+            const filasEgresos = egresosMes.map(e => [e.fecha, e.concepto, `S/ ${Number(e.monto).toFixed(2)}`]);
+            doc.setFontSize(11); doc.setTextColor(231, 76, 60); doc.text("EGRESOS", 14, y); y += 5;
+            doc.autoTable({ startY: y, head: [['FECHA', 'CONCEPTO', 'MONTO']], body: filasEgresos.length ? filasEgresos : [['-', 'Sin egresos', '-']], headStyles: { fillColor: [231, 76, 60] }, theme: 'grid' });
+            y = doc.lastAutoTable.finalY + 12;
+
+            doc.setFontSize(14);
+            if (saldo >= 0) doc.setTextColor(46, 204, 113); else doc.setTextColor(231, 76, 60);
+            doc.text(`SALDO DEL MES: S/ ${saldo.toFixed(2)}`, 14, y);
+
+            doc.setFontSize(8); doc.setTextColor(150);
+            doc.text(`Generado por: ${userSession.email} - ${trazabilidad}`, 14, doc.internal.pageSize.height - 10);
+
+            doc.save(`Informe_${mesInformeActivo}.pdf`);
         }
 
         revisarSesionActiva();
