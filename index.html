@@ -187,7 +187,7 @@
                 <div class="stats-bar">
                     <div class="stat-item">Ingresos <span id="statIngresos" style="color:var(--success);">S/ 0</span></div>
                     <div class="stat-item">Egresos <span id="statEgresos" style="color:var(--danger);">S/ 0</span></div>
-                    <div class="stat-item">Saldo <span id="statSaldo">S/ 0</span></div>
+                    <div class="stat-item">Saldo Acum. <span id="statSaldo">S/ 0</span></div>
                 </div>
 
                 <div class="seccion-titulo">Ingresos</div>
@@ -502,6 +502,18 @@
             return { totalIngresos, totalEgresos, saldo: totalIngresos - totalEgresos };
         }
 
+        // Saldo arrastrado: suma el neto (ingresos-egresos) de todos los meses
+        // anteriores en el calendario más el del mes actual.
+        function saldoAcumuladoHasta(mes) {
+            const idx = MESES_INFORME.indexOf(mes);
+            let acumulado = 0;
+            for (let i = 0; i <= idx; i++) {
+                const { totalIngresos, totalEgresos } = totalesMesInforme(MESES_INFORME[i]);
+                acumulado += totalIngresos - totalEgresos;
+            }
+            return acumulado;
+        }
+
         async function irAInforme() {
             modoActual = 'informe';
             informeNivel = 1;
@@ -540,14 +552,15 @@
 
         function renderMesesInforme() {
             document.getElementById('renderMosaicoInforme').innerHTML = MESES_INFORME.map(mes => {
-                const { totalIngresos, totalEgresos, saldo } = totalesMesInforme(mes);
+                const { totalIngresos, totalEgresos } = totalesMesInforme(mes);
+                const saldoAcum = saldoAcumuladoHasta(mes);
                 return `
                 <div class="btn-mes-card" onclick="irAInformeMes('${mes}')">
                     <h4>${mes.substring(0,3)}</h4>
                     <div class="resumen-mes">
                         <span class="cobrado"><b>Ingresos:</b> S/ ${totalIngresos.toFixed(2)}</span><br>
                         <b>Egresos:</b> S/ ${totalEgresos.toFixed(2)}<br>
-                        <b>Saldo:</b> <span style="color:${saldo >= 0 ? 'var(--success)' : 'var(--danger)'}">S/ ${saldo.toFixed(2)}</span>
+                        <b>Saldo Acum.:</b> <span style="color:${saldoAcum >= 0 ? 'var(--success)' : 'var(--danger)'}">S/ ${saldoAcum.toFixed(2)}</span>
                     </div>
                 </div>`;
             }).join('');
@@ -564,12 +577,13 @@
         }
 
         function renderInformeMes() {
-            const { totalIngresos, totalEgresos, saldo } = totalesMesInforme(mesInformeActivo);
+            const { totalIngresos, totalEgresos } = totalesMesInforme(mesInformeActivo);
+            const saldoAcum = saldoAcumuladoHasta(mesInformeActivo);
             document.getElementById('statIngresos').innerText = `S/ ${totalIngresos.toFixed(2)}`;
             document.getElementById('statEgresos').innerText = `S/ ${totalEgresos.toFixed(2)}`;
             const elSaldo = document.getElementById('statSaldo');
-            elSaldo.innerText = `S/ ${saldo.toFixed(2)}`;
-            elSaldo.style.color = saldo >= 0 ? 'var(--success)' : 'var(--danger)';
+            elSaldo.innerText = `S/ ${saldoAcum.toFixed(2)}`;
+            elSaldo.style.color = saldoAcum >= 0 ? 'var(--success)' : 'var(--danger)';
 
             const ingresosMes = informeIngresos.filter(i => i.mes === mesInformeActivo);
             document.getElementById('renderIngresosInforme').innerHTML = ingresosMes.length ? ingresosMes.map(i => {
@@ -752,7 +766,8 @@
         function generarPDFInforme() {
             const { jsPDF } = window.jspdf; const doc = new jsPDF();
             const trazabilidad = new Date().toLocaleString();
-            const { totalIngresos, totalEgresos, saldo } = totalesMesInforme(mesInformeActivo);
+            const { totalIngresos, totalEgresos } = totalesMesInforme(mesInformeActivo);
+            const saldoAcum = saldoAcumuladoHasta(mesInformeActivo);
 
             doc.setFontSize(18); doc.setTextColor(95, 150, 115);
             doc.text("COLEGIO DOMINGO SABIO", 14, 20);
@@ -788,8 +803,8 @@
             y = doc.lastAutoTable.finalY + 12;
 
             doc.setFontSize(14);
-            if (saldo >= 0) doc.setTextColor(46, 204, 113); else doc.setTextColor(231, 76, 60);
-            doc.text(`SALDO DEL MES: S/ ${saldo.toFixed(2)}`, 14, y);
+            if (saldoAcum >= 0) doc.setTextColor(46, 204, 113); else doc.setTextColor(231, 76, 60);
+            doc.text(`SALDO ACUMULADO AL MES DE ${mesInformeActivo.toUpperCase()}: S/ ${saldoAcum.toFixed(2)}`, 14, y);
 
             doc.setFontSize(8); doc.setTextColor(150);
             doc.text(`Generado por: ${userSession.email} - ${trazabilidad}`, 14, doc.internal.pageSize.height - 10);
