@@ -133,7 +133,7 @@
 
         <div id="modalNuevoIngreso" class="modal-overlay">
             <div class="modal-content">
-                <h2 style="text-align:center; color:var(--primary-dark);">Nuevo Ingreso</h2>
+                <h2 style="text-align:center; color:var(--primary-dark);">Nuevo Concepto</h2>
                 <input type="text" id="newIngresoConcepto" placeholder="Concepto (ej: Aporte del aula)">
                 <input type="number" id="newIngresoMonto" placeholder="Monto por alumno S/">
                 <button class="btn-principal" onclick="crearIngreso()">GUARDAR</button>
@@ -190,13 +190,14 @@
                     <div class="stat-item">Saldo Acum. <span id="statSaldo">S/ 0</span></div>
                 </div>
 
-                <div class="seccion-titulo">Ingresos</div>
-                <div id="renderIngresosInforme"></div>
-                <button class="btn-principal" onclick="abrirModalNuevoIngreso()">+ NUEVO INGRESO</button>
+                <button class="btn-principal" onclick="abrirModalNuevoIngreso()">+ NUEVO CONCEPTO</button>
 
-                <div class="seccion-titulo">Egresos</div>
+                <div class="seccion-titulo">Conceptos Registrados</div>
+                <div id="renderIngresosInforme"></div>
+
+                <div class="seccion-titulo">Egresos Generales del Mes</div>
                 <div id="renderEgresosInforme"></div>
-                <button class="btn-danger-mod" onclick="abrirModalNuevoEgreso()">+ NUEVO EGRESO</button>
+                <button class="btn-danger-mod" onclick="abrirModalNuevoEgreso()">+ NUEVO EGRESO GENERAL</button>
 
                 <button onclick="generarPDFInforme()" style="width:100%; background:none; border:none; color:#7f8c8d; font-weight:800; cursor:pointer; text-decoration:underline; margin-top:25px;">DESCARGAR PDF DEL MES</button>
             </div>
@@ -609,7 +610,7 @@
                     </div>
                     <button class="btn-delete-card" onclick="preguntarBorrarIngreso(${i.id}, '${i.concepto.replace(/'/g, "\\'")}')">🗑️</button>
                 </div>`;
-            }).join('') : '<p style="text-align:center; padding:20px; color:#bdc3c7;">Sin ingresos este mes.</p>';
+            }).join('') : '<p style="text-align:center; padding:20px; color:#bdc3c7;">Sin conceptos registrados. Presione "+ NUEVO CONCEPTO" para crear el primero.</p>';
 
             const egresosMes = informeEgresos.filter(e => e.mes === mesInformeActivo);
             document.getElementById('renderEgresosInforme').innerHTML = egresosMes.length ? egresosMes.map(e => `
