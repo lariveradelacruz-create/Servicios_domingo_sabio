@@ -205,14 +205,24 @@
         <div id="vistaInformeIngresoDetalle" class="hidden">
             <div class="container">
                 <div class="stats-bar">
-                    <div class="stat-item">Total Recaudado <span id="totalIngresoDetalle">S/ 0</span></div>
+                    <div class="stat-item">Ingresos <span id="totalIngresoDetalle" style="color:var(--success);">S/ 0</span></div>
+                    <div class="stat-item">Egresos <span id="totalEgresosConcepto" style="color:var(--danger);">S/ 0</span></div>
+                    <div class="stat-item">Saldo <span id="saldoConcepto">S/ 0</span></div>
                 </div>
+
+                <div class="seccion-titulo">Alumnos</div>
                 <div id="renderDetalleAlumnos"></div>
                 <div style="display:flex; gap:8px; margin-top:15px;">
                     <select id="selectAgregarAlumno" style="flex:1; padding:14px; border-radius:12px; border:1px solid #ddd;"></select>
                     <button class="btn-accion" onclick="agregarAlumnoExistenteAIngreso()">➕</button>
                 </div>
                 <button class="btn-principal" onclick="abrirModalNuevoAlumnoInforme()">+ CREAR NUEVO ALUMNO</button>
+
+                <div class="seccion-titulo">Egresos de este concepto</div>
+                <div id="renderEgresosConcepto"></div>
+                <button class="btn-danger-mod" onclick="abrirModalNuevoEgreso(ingresoActivo.id)">+ NUEVO EGRESO</button>
+
+                <button onclick="generarPDFConceptoIndividual()" style="width:100%; background:none; border:none; color:#7f8c8d; font-weight:800; cursor:pointer; text-decoration:underline; margin-top:20px;">DESCARGAR PDF DE ESTE CONCEPTO</button>
             </div>
         </div>
 
@@ -256,6 +266,7 @@
         let informeIngresos = []; let informeDetalle = []; let informeEgresos = [];
         let modoActual = 'servicios'; let informeNivel = 1;
         let mesInformeActivo = null; let ingresoActivo = null;
+        let contextoNuevoEgreso = null;
 
         function hoyStr() {
             const d = new Date();
@@ -680,6 +691,24 @@
             document.getElementById('selectAgregarAlumno').innerHTML =
                 '<option value="">-- Agregar alumno existente --</option>' +
                 disponibles.map(a => `<option value="${a.identificacion}">${a.nombres_y_apellidos}</option>`).join('');
+
+            const egresosConcepto = informeEgresos.filter(e => e.ingreso_id === ingresoActivo.id);
+            const totalEgresosConcepto = egresosConcepto.reduce((s, e) => s + Number(e.monto), 0);
+            document.getElementById('renderEgresosConcepto').innerHTML = egresosConcepto.length ? egresosConcepto.map(e => `
+                <div class="card-servicio">
+                    <div class="info-ser" style="cursor:default;">
+                        <h3>${e.concepto}</h3>
+                        <span class="total-tag">S/ ${Number(e.monto).toFixed(2)}</span>
+                        <p>${e.fecha}</p>
+                    </div>
+                    <button class="btn-delete-card" onclick="preguntarBorrarEgreso(${e.id})">🗑️</button>
+                </div>`).join('') : '<p style="text-align:center; padding:20px; color:#bdc3c7;">Sin egresos en este concepto.</p>';
+
+            document.getElementById('totalEgresosConcepto').innerText = `S/ ${totalEgresosConcepto.toFixed(2)}`;
+            const saldoConcepto = total - totalEgresosConcepto;
+            const elSaldoConcepto = document.getElementById('saldoConcepto');
+            elSaldoConcepto.innerText = `S/ ${saldoConcepto.toFixed(2)}`;
+            elSaldoConcepto.style.color = saldoConcepto >= 0 ? 'var(--success)' : 'var(--danger)';
         }
 
         async function actualizarMontoDetalle(detalleId, nuevoMonto) {
@@ -731,7 +760,8 @@
             renderIngresoDetalle();
         }
 
-        function abrirModalNuevoEgreso() {
+        function abrirModalNuevoEgreso(ingresoId) {
+            contextoNuevoEgreso = ingresoId || null;
             document.getElementById('newEgresoConcepto').value = '';
             document.getElementById('newEgresoMonto').value = '';
             document.getElementById('newEgresoFecha').value = hoyStr();
@@ -743,11 +773,13 @@
             const monto = parseFloat(document.getElementById('newEgresoMonto').value);
             const fecha = document.getElementById('newEgresoFecha').value;
             if (!concepto || !monto || !fecha) return alert('Complete todos los campos.');
-            const { error } = await client.from('informe_egresos').insert([{ concepto, monto, fecha, mes: mesInformeActivo }]);
+            const payload = { concepto, monto, fecha, mes: mesInformeActivo };
+            if (contextoNuevoEgreso) payload.ingreso_id = contextoNuevoEgreso;
+            const { error } = await client.from('informe_egresos').insert([payload]);
             if (error) return alert(error.message);
             cerrarModal('modalNuevoEgreso');
             await cargarInforme();
-            renderInformeMes();
+            if (contextoNuevoEgreso) renderIngresoDetalle(); else renderInformeMes();
         }
 
         function preguntarBorrarEgreso(id) {
@@ -759,8 +791,46 @@
                 cerrarModal('modalConfirmar');
                 await client.from('informe_egresos').delete().eq('id', id);
                 await cargarInforme();
-                renderInformeMes();
+                if (informeNivel === 3) renderIngresoDetalle(); else renderInformeMes();
             };
+        }
+
+        function generarPDFConceptoIndividual() {
+            const { jsPDF } = window.jspdf; const doc = new jsPDF();
+            const trazabilidad = new Date().toLocaleString();
+            const filas = informeDetalle.filter(d => d.ingreso_id === ingresoActivo.id);
+            const total = filas.reduce((s, d) => s + Number(d.monto), 0);
+
+            doc.setFontSize(18); doc.setTextColor(95, 150, 115);
+            doc.text("COLEGIO DOMINGO SABIO", 14, 20);
+            doc.setFontSize(10); doc.setTextColor(100);
+            doc.text(`CONCEPTO: ${ingresoActivo.concepto.toUpperCase()} - MES: ${ingresoActivo.mes.toUpperCase()}`, 14, 28);
+
+            const rows = filas.map(d => {
+                const al = alumnos.find(a => a.identificacion === d.alumno_id);
+                return [al ? al.nombres_y_apellidos : `Alumno #${d.alumno_id}`, `S/ ${Number(d.monto).toFixed(2)}`];
+            });
+            doc.autoTable({ startY: 35, head: [['ALUMNO', 'MONTO']], body: rows.length ? rows : [['-', 'Sin alumnos incluidos']], headStyles: { fillColor: [119, 178, 140] }, theme: 'striped' });
+
+            let y = doc.lastAutoTable.finalY + 10;
+            const egresosConcepto = informeEgresos.filter(e => e.ingreso_id === ingresoActivo.id);
+            const totalEgresos = egresosConcepto.reduce((s, e) => s + Number(e.monto), 0);
+            const filasEgresos = egresosConcepto.map(e => [e.fecha, e.concepto, `S/ ${Number(e.monto).toFixed(2)}`]);
+            doc.setFontSize(11); doc.setTextColor(231, 76, 60);
+            doc.text("EGRESOS DE ESTE CONCEPTO", 14, y); y += 5;
+            doc.autoTable({ startY: y, head: [['FECHA', 'CONCEPTO', 'MONTO']], body: filasEgresos.length ? filasEgresos : [['-', 'Sin egresos', '-']], headStyles: { fillColor: [231, 76, 60] }, theme: 'grid' });
+            y = doc.lastAutoTable.finalY + 12;
+
+            const saldoConcepto = total - totalEgresos;
+            doc.setFontSize(14);
+            if (saldoConcepto >= 0) doc.setTextColor(46, 204, 113); else doc.setTextColor(231, 76, 60);
+            doc.text(`SALDO DEL CONCEPTO: S/ ${saldoConcepto.toFixed(2)}`, 14, y);
+
+            doc.setFontSize(8); doc.setTextColor(150);
+            doc.text(`Generado por: ${userSession.email} - ${trazabilidad}`, 14, doc.internal.pageSize.height - 10);
+
+            const nombreArchivo = ingresoActivo.concepto.trim().replace(/[^a-zA-Z0-9]+/g, '_');
+            doc.save(`Ingreso_${nombreArchivo}_${ingresoActivo.mes}.pdf`);
         }
 
         function generarPDFInforme() {
