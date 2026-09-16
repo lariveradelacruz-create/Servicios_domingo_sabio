@@ -152,6 +152,17 @@
             </div>
         </div>
 
+        <div id="modalNuevoAlumnoServicio" class="modal-overlay">
+            <div class="modal-content">
+                <h2 style="text-align:center; color:var(--primary-dark);">Nuevo Alumno</h2>
+                <input type="number" id="newAlumnoIdServicio" placeholder="N° identificación">
+                <input type="text" id="newAlumnoNombreServicio" placeholder="Nombres y apellidos">
+                <input type="text" id="newAlumnoGradoServicio" placeholder="Grado (opcional)">
+                <button class="btn-principal" onclick="crearAlumnoYAgregarAServicio()">GUARDAR Y AGREGAR</button>
+                <button onclick="cerrarModal('modalNuevoAlumnoServicio')" style="width:100%; background:none; border:none; color:#95a5a6; margin-top:15px; cursor:pointer;">Cancelar</button>
+            </div>
+        </div>
+
         <div id="modalNuevoAlumnoInforme" class="modal-overlay">
             <div class="modal-content">
                 <h2 style="text-align:center; color:var(--primary-dark);">Nuevo Alumno</h2>
@@ -245,6 +256,13 @@
                     <div class="stat-item">Faltantes <span id="statFaltan">0</span></div>
                 </div>
                 <div id="renderAlumnos"></div>
+
+                <div class="seccion-titulo">Gestionar lista de este mes</div>
+                <div style="display:flex; gap:8px; margin-bottom:10px;">
+                    <select id="selectAgregarAlumnoServicio" style="flex:1; padding:14px; border-radius:12px; border:1px solid #ddd;"></select>
+                    <button class="btn-accion" onclick="agregarAlumnoExistenteAServicio()">➕</button>
+                </div>
+                <button class="btn-principal" onclick="abrirModalNuevoAlumnoServicio()">+ CREAR NUEVO ALUMNO</button>
             </div>
             <div class="footer-premium">
                 <button class="btn-ws-grupal" onclick="enviarAvisoGrupal()">📢 AVISO GRUPAL</button>
@@ -260,6 +278,7 @@
         const client = createClient(SB_URL, SB_KEY);
 
         let serviciosTotal = []; let alumnos = []; let pagosIDs = []; let todosLosPagos = [];
+        let servicioAlumnosTotal = []; let alumnosServicioActivo = [];
         let servicioActivo = null; let tabActual = 'pendientes';
         let nivelActual = 1; let userSession = null;
         let mesesSeleccionados = [];
@@ -309,8 +328,10 @@
             // Cargar servicios y todos los pagos para calcular totales
             const resS = await client.from('servicios').select('*').order('created_at', { ascending: false });
             const resP = await client.from('pagos').select('*');
+            const resSA = await client.from('servicio_alumnos').select('*');
             serviciosTotal = resS.data || [];
             todosLosPagos = resP.data || [];
+            servicioAlumnosTotal = resSA.data || [];
 
             const nombresUnicos = [...new Set(serviciosTotal.map(s => s.nombre))];
             const container = document.getElementById('renderServicios');
@@ -356,8 +377,15 @@
             const n = document.getElementById('newNombre').value;
             const m = document.getElementById('newMonto').value;
             if(!n || !m || !mesesSeleccionados.length) return alert("Complete los datos y seleccione meses.");
-            const { error } = await client.from('servicios').insert(mesesSeleccionados.map(mes => ({ nombre: n, monto: m, mes: mes })));
+            const { data, error } = await client.from('servicios').insert(mesesSeleccionados.map(mes => ({ nombre: n, monto: m, mes: mes }))).select();
             if(error) return alert(error.message);
+            // Congela el roster actual como la foto de este nuevo servicio/mes.
+            if (alumnos.length && data && data.length) {
+                const filasSnapshot = [];
+                data.forEach(s => alumnos.forEach(al => filasSnapshot.push({ servicio_id: s.id, alumno_id: al.identificacion })));
+                const { error: errSnap } = await client.from('servicio_alumnos').insert(filasSnapshot);
+                if (errSnap) return alert(errSnap.message);
+            }
             cerrarModalNuevo(); await cargarServicios();
         }
 
@@ -376,10 +404,11 @@
             document.getElementById('mainTitle').innerText = nombre.toUpperCase();
             
             const meses = serviciosTotal.filter(s => s.nombre === nombre).sort((a,b) => a.id - b.id);
-            const totalAlumnos = alumnos.length;
 
             document.getElementById('renderMosaico').innerHTML = meses.map(s => {
-                const pagados = todosLosPagos.filter(p => p.servicio_id === s.id).length;
+                const idsRoster = servicioAlumnosTotal.filter(sa => sa.servicio_id === s.id).map(sa => sa.alumno_id);
+                const totalAlumnos = idsRoster.length;
+                const pagados = todosLosPagos.filter(p => p.servicio_id === s.id && idsRoster.includes(p.alumno_id)).length;
                 const pendientes = totalAlumnos - pagados;
                 const totalSoles = totalAlumnos * s.monto;
                 const cobradoSoles = pagados * s.monto;
@@ -428,18 +457,23 @@
         }
 
         async function actualizarListaPagos() {
-            const { data } = await client.from('pagos').select('alumno_id').eq('servicio_id', servicioActivo.id);
-            pagosIDs = data ? data.map(p => p.alumno_id) : [];
+            const [resP, resSA] = await Promise.all([
+                client.from('pagos').select('alumno_id').eq('servicio_id', servicioActivo.id),
+                client.from('servicio_alumnos').select('alumno_id').eq('servicio_id', servicioActivo.id)
+            ]);
+            pagosIDs = resP.data ? resP.data.map(p => p.alumno_id) : [];
+            alumnosServicioActivo = resSA.data ? resSA.data.map(sa => sa.alumno_id) : [];
             renderAlumnos();
         }
 
         function renderAlumnos() {
             const container = document.getElementById('renderAlumnos');
             container.innerHTML = "";
-            const filtrados = alumnos.filter(al => (tabActual === 'pagados' ? pagosIDs.includes(al.identificacion) : !pagosIDs.includes(al.identificacion)));
+            const rosterServicio = alumnos.filter(al => alumnosServicioActivo.includes(al.identificacion));
+            const filtrados = rosterServicio.filter(al => (tabActual === 'pagados' ? pagosIDs.includes(al.identificacion) : !pagosIDs.includes(al.identificacion)));
             document.getElementById('statMonto').innerText = `S/ ${pagosIDs.length * servicioActivo.monto}`;
-            document.getElementById('statFaltan').innerText = alumnos.length - pagosIDs.length;
-            
+            document.getElementById('statFaltan').innerText = rosterServicio.filter(al => !pagosIDs.includes(al.identificacion)).length;
+
             filtrados.forEach(al => {
                 const esP = tabActual === 'pagados';
                 container.innerHTML += `
@@ -450,9 +484,60 @@
                         <button class="btn-accion ${esP ? 'pagado' : ''}" onclick="abrirConfirmacionPago(${al.identificacion}, '${al.nombres_y_apellidos}', ${esP})">
                             ${esP ? '🔄' : '○'}
                         </button>
+                        <button class="btn-delete-card" onclick="preguntarQuitarDeServicio(${al.identificacion}, '${al.nombres_y_apellidos.replace(/'/g, "\\'")}')">🗑️</button>
                     </div>
                 </div>`;
             });
+
+            const disponibles = alumnos.filter(a => !alumnosServicioActivo.includes(a.identificacion));
+            document.getElementById('selectAgregarAlumnoServicio').innerHTML =
+                '<option value="">-- Agregar alumno existente --</option>' +
+                disponibles.map(a => `<option value="${a.identificacion}">${a.nombres_y_apellidos}</option>`).join('');
+        }
+
+        function preguntarQuitarDeServicio(alumnoId, nombre) {
+            document.getElementById('confTitulo').innerText = 'QUITAR DE ESTE MES';
+            document.getElementById('confCuerpo').innerHTML = `¿Quitar a <b>${nombre.toUpperCase()}</b> de ${servicioActivo.mes.toUpperCase()}?<br>Ya no se le exigirá este pago este mes. Sigue en el listado general del aula.`;
+            document.getElementById('btnAceptarConf').className = 'btn-danger-mod';
+            document.getElementById('modalConfirmar').style.display = 'flex';
+            document.getElementById('btnAceptarConf').onclick = async () => {
+                cerrarModal('modalConfirmar');
+                await client.from('servicio_alumnos').delete().eq('servicio_id', servicioActivo.id).eq('alumno_id', alumnoId);
+                await actualizarListaPagos();
+            };
+        }
+
+        async function agregarAlumnoExistenteAServicio() {
+            const sel = document.getElementById('selectAgregarAlumnoServicio');
+            const alumnoId = parseInt(sel.value);
+            if (!alumnoId) return;
+            await client.from('servicio_alumnos').insert([{ servicio_id: servicioActivo.id, alumno_id: alumnoId }]);
+            await actualizarListaPagos();
+        }
+
+        function abrirModalNuevoAlumnoServicio() {
+            document.getElementById('newAlumnoIdServicio').value = Date.now();
+            document.getElementById('newAlumnoNombreServicio').value = '';
+            document.getElementById('newAlumnoGradoServicio').value = '';
+            abrirModal('modalNuevoAlumnoServicio');
+        }
+
+        async function crearAlumnoYAgregarAServicio() {
+            const identificacion = parseInt(document.getElementById('newAlumnoIdServicio').value);
+            const nombre = document.getElementById('newAlumnoNombreServicio').value.trim();
+            const grado = document.getElementById('newAlumnoGradoServicio').value.trim() || 'General';
+            if (!identificacion || !nombre) return alert('Complete N° de identificación y nombre.');
+            const { data, error } = await client.from('alumnos').insert([{ identificacion, nombres_y_apellidos: nombre, grado }]).select();
+            if (error) {
+                if (error.code === '23505') return alert('Ya existe un alumno con esa identificación.');
+                return alert(error.message);
+            }
+            const nuevoAlumno = data[0];
+            alumnos.push(nuevoAlumno);
+            alumnos.sort((a, b) => a.nombres_y_apellidos.localeCompare(b.nombres_y_apellidos));
+            await client.from('servicio_alumnos').insert([{ servicio_id: servicioActivo.id, alumno_id: nuevoAlumno.identificacion }]);
+            cerrarModal('modalNuevoAlumnoServicio');
+            await actualizarListaPagos();
         }
 
         function abrirConfirmacionPago(id, nom, yaP) {
@@ -480,7 +565,7 @@
         }
 
         function enviarAvisoGrupal() {
-            const faltantes = alumnos.length - pagosIDs.length;
+            const faltantes = alumnosServicioActivo.filter(id => !pagosIDs.includes(id)).length;
             const msj = `📢 *AVISO DE TESORERÍA*\nEstimados padres, informamos que contamos con *${faltantes} pagos pendientes* para el mes de ${servicioActivo.mes.toUpperCase()}. Agradecemos su regularización.`;
             window.open(`https://wa.me/?text=${encodeURIComponent(msj)}`);
         }
@@ -494,7 +579,8 @@
             const trazabilidad = new Date().toLocaleString();
             doc.setFontSize(18); doc.setTextColor(95, 150, 115); doc.text("COLEGIO DOMINGO SABIO", 14, 20);
             doc.setFontSize(10); doc.setTextColor(100); doc.text(`REPORTE: ${servicioActivo.nombre} - MES: ${servicioActivo.mes.toUpperCase()}`, 14, 28);
-            const rows = alumnos.map(al => [al.nombres_y_apellidos, pagosIDs.includes(al.identificacion) ? "PAGADO" : "PENDIENTE", pagosIDs.includes(al.identificacion) ? `S/ ${servicioActivo.monto}` : "0.00"]);
+            const rosterServicio = alumnos.filter(al => alumnosServicioActivo.includes(al.identificacion));
+            const rows = rosterServicio.map(al => [al.nombres_y_apellidos, pagosIDs.includes(al.identificacion) ? "PAGADO" : "PENDIENTE", pagosIDs.includes(al.identificacion) ? `S/ ${servicioActivo.monto}` : "0.00"]);
             doc.autoTable({ startY: 35, head: [['ALUMNO', 'ESTADO', 'MONTO']], body: rows, headStyles: {fillColor: [119, 178, 140]}, theme: 'striped', didDrawPage: (data) => {
                 doc.setFontSize(8); doc.text(`Generado por: ${userSession.email} - ${trazabilidad}`, 14, doc.internal.pageSize.height - 10);
             }});
