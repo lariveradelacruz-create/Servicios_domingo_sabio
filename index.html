@@ -174,7 +174,13 @@
             <div id="renderServicios"></div>
             <button class="fab" onclick="abrirModal('modalNuevo')">+</button>
             <button class="btn-principal" style="background:var(--primary-dark); margin-top:30px;" onclick="irAInforme()">📊 INFORME INGRESOS Y EGRESOS</button>
+            <button class="btn-principal" style="background:#7f8c8d; margin-top:10px;" onclick="irAGestionAlumnos()">👥 GESTIONAR ALUMNOS</button>
             <button onclick="cerrarSesion()" style="width:100%; background:none; border:none; color:#95a5a6; margin-top:15px; font-weight:bold; cursor:pointer;">CERRAR SESIÓN</button>
+        </div>
+
+        <div id="vistaGestionAlumnos" class="container hidden">
+            <div class="seccion-titulo">Alumnos Registrados</div>
+            <div id="renderGestionAlumnos"></div>
         </div>
 
         <div id="vistaInformeMeses" class="container hidden">
@@ -401,6 +407,15 @@
 
         function navegarAtras() {
             if(modoActual === 'informe') { navegarAtrasInforme(); return; }
+            if(modoActual === 'alumnos') {
+                modoActual = 'servicios';
+                document.getElementById('vistaGestionAlumnos').classList.add('hidden');
+                document.getElementById('vistaNivel1').classList.remove('hidden');
+                document.getElementById('btnBack').style.display = 'none';
+                document.getElementById('mainTitle').innerText = 'DOMINGO SABIO';
+                document.getElementById('subTitle').innerText = 'Gestión Verde 2026';
+                return;
+            }
             if(nivelActual === 3) { nivelActual = 2; document.getElementById('vistaNivel3').classList.add('hidden'); document.getElementById('vistaNivel2').classList.remove('hidden'); document.getElementById('subTitle').innerText = "Gestión Verde 2026"; }
             else if(nivelActual === 2) { 
                 nivelActual = 1; 
@@ -484,6 +499,42 @@
                 doc.setFontSize(8); doc.text(`Generado por: ${userSession.email} - ${trazabilidad}`, 14, doc.internal.pageSize.height - 10);
             }});
             doc.save(`Reporte_${servicioActivo.mes}.pdf`);
+        }
+
+        // ===== GESTIÓN DE ALUMNOS =====
+
+        function irAGestionAlumnos() {
+            modoActual = 'alumnos';
+            document.getElementById('vistaNivel1').classList.add('hidden');
+            document.getElementById('vistaGestionAlumnos').classList.remove('hidden');
+            document.getElementById('btnBack').style.display = 'flex';
+            document.getElementById('mainTitle').innerText = 'ALUMNOS';
+            document.getElementById('subTitle').innerText = 'Gestionar listado';
+            renderGestionAlumnos();
+        }
+
+        function renderGestionAlumnos() {
+            document.getElementById('renderGestionAlumnos').innerHTML = alumnos.length ? alumnos.map(al => `
+                <div class="card-alumno">
+                    <div class="nombre-alumno">${al.nombres_y_apellidos}</div>
+                    <div class="acciones-alumno">
+                        <button class="btn-delete-card" onclick="preguntarBorrarAlumno(${al.identificacion}, '${al.nombres_y_apellidos.replace(/'/g, "\\'")}')">🗑️</button>
+                    </div>
+                </div>`).join('') : '<p style="text-align:center; padding:20px; color:#bdc3c7;">Sin alumnos registrados.</p>';
+        }
+
+        function preguntarBorrarAlumno(id, nombre) {
+            document.getElementById('confTitulo').innerText = 'BORRAR ALUMNO';
+            document.getElementById('confCuerpo').innerHTML = `¿Eliminar a <b>${nombre.toUpperCase()}</b>?<br>Se borrarán también todos sus pagos e informes (ingresos/egresos) asociados en todos los meses. Esta acción no se puede deshacer.`;
+            document.getElementById('btnAceptarConf').className = 'btn-danger-mod';
+            document.getElementById('modalConfirmar').style.display = 'flex';
+            document.getElementById('btnAceptarConf').onclick = async () => {
+                cerrarModal('modalConfirmar');
+                const { error } = await client.from('alumnos').delete().eq('identificacion', id);
+                if (error) return alert(error.message);
+                alumnos = alumnos.filter(a => a.identificacion !== id);
+                renderGestionAlumnos();
+            };
         }
 
         // ===== INFORME DE INGRESOS Y EGRESOS =====
