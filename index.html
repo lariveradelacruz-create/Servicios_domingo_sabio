@@ -212,6 +212,11 @@
                 <div class="seccion-titulo">Conceptos Registrados</div>
                 <div id="renderIngresosInforme"></div>
 
+                <div id="seccionEgresosSinAsignar" class="hidden">
+                    <div class="seccion-titulo">Egresos sin concepto asignado</div>
+                    <div id="renderEgresosSinAsignar"></div>
+                </div>
+
                 <button onclick="generarPDFInforme()" style="width:100%; background:none; border:none; color:#7f8c8d; font-weight:800; cursor:pointer; text-decoration:underline; margin-top:25px;">DESCARGAR PDF DEL MES</button>
             </div>
         </div>
@@ -744,6 +749,39 @@
                     <button class="btn-delete-card" onclick="preguntarBorrarIngreso(${i.id}, '${i.concepto.replace(/'/g, "\\'")}')">🗑️</button>
                 </div>`;
             }).join('') : '<p style="text-align:center; padding:20px; color:#bdc3c7;">Sin conceptos registrados. Presione "+ NUEVO CONCEPTO" para crear el primero.</p>';
+
+            const egresosSinAsignar = informeEgresos.filter(e => e.mes === mesInformeActivo && !e.ingreso_id);
+            const seccionSA = document.getElementById('seccionEgresosSinAsignar');
+            if (egresosSinAsignar.length) {
+                seccionSA.classList.remove('hidden');
+                document.getElementById('renderEgresosSinAsignar').innerHTML = egresosSinAsignar.map(e => `
+                    <div class="card-servicio">
+                        <div class="info-ser" style="cursor:default;">
+                            <h3>${e.concepto}</h3>
+                            <span class="total-tag">S/ ${Number(e.monto).toFixed(2)}</span>
+                            <p>${e.fecha}</p>
+                        </div>
+                        <button class="btn-delete-card" onclick="preguntarBorrarEgreso(${e.id})">🗑️</button>
+                    </div>
+                    <div style="display:flex; gap:8px; margin:-8px 0 15px 0;">
+                        <select id="asignarEgreso${e.id}" style="flex:1; padding:10px; border-radius:10px; border:1px solid #ddd; font-size:13px;">
+                            <option value="">-- Asignar a concepto --</option>
+                            ${ingresosMes.map(i => `<option value="${i.id}">${i.concepto}</option>`).join('')}
+                        </select>
+                        <button class="btn-accion" onclick="asignarEgresoAConcepto(${e.id})">✓</button>
+                    </div>`).join('');
+            } else {
+                seccionSA.classList.add('hidden');
+            }
+        }
+
+        async function asignarEgresoAConcepto(egresoId) {
+            const sel = document.getElementById(`asignarEgreso${egresoId}`);
+            const ingresoId = parseInt(sel.value);
+            if (!ingresoId) return alert('Elige a qué concepto asignarlo.');
+            await client.from('informe_egresos').update({ ingreso_id: ingresoId }).eq('id', egresoId);
+            await cargarInforme();
+            renderInformeMes();
         }
 
         function abrirModalNuevoIngreso() {
